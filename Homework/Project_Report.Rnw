@@ -1,0 +1,288 @@
+
+\documentclass{article}
+\usepackage[pdftex]{graphicx}
+\usepackage{rotating}
+\usepackage{amsmath}
+\usepackage{authblk}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{fullpage}
+\usepackage{Sweave}
+\usepackage{pdflscape}
+\usepackage{amsmath}   
+\usepackage{amssymb}
+\usepackage{wasysym}
+\usepackage{ctable}
+\newcommand{\fg}[3]{\begin{figure}[htbp]%
+        \leavevmode%
+        \centerline{\includegraphics{#1}}%
+        \caption{#3}%
+        \label{#2}%
+        \end{figure}}
+%\fgh{basefilename}{label}{caption}{short caption for TOC}
+\newcommand{\fgh}[4]{\begin{figure}[htbp]%
+        \leavevmode%
+        \centerline{\includegraphics{#1}}%
+        \caption[#4]{#3}%
+        \label{#2}%
+        \end{figure}}
+\begin{document} 
+\SweaveOpts{concordance=TRUE}
+\SweaveOpts{fig=FALSE, results=hide, echo=TRUE}
+
+\title{CPH576C Project Report 1}
+%\author[1]{\small{Bruce Barber}}
+\author{\small{Meng Lu}}
+
+\affil{\footnotesize{GIDP Statistics \\ Email: menglu@email.arizona.edu}}
+%\affil[2]{\footnotesize{Department of Pediatric, The University of Arizona}}
+%\affil[2]{\footnotesize{Statistical Consulting Laboratory \\ email: zlu@arizona.edu}}
+
+\maketitle
+\section{Abstract}
+        
+                
+            
+\section{Overview}
+     The results of your statistical analyses help you to understand the outcome of your study, e.g., whether or not some variable has an effect, whether variables are related, whether differences among groups of observations are the same or different, etc. Statistics are tools of science, not an end unto themselves. Statistics should be used to substantiate your findings and help you to say objectively when you have significant results. Therefore, when reporting the statistical outcomes relevant to your study, subordinate them to the actual biological results.
+
+
+    
+\section{Descriptive (Summary) Statistics}
+      Means: Always report the mean (average value) along with a measure of variablility (standard deviation(s) or standard error of the mean ). Two common ways to express the mean and variability are shown below:
+
+"Total length of brown trout$ (n=128)$ averaged$ 34.4 cm (s = 12.4 cm)$ in May, 1994, samples from Sebago Lake."
+
+s = standard deviation (this format is preferred by Huth and others (1994)
+
+"Total length of brown trout $(n=128)$ averaged $34.4 ± 12.4 cm$ in May, 1994, samples from Sebago Lake."
+
+This style necessitates specifically saying in the Methods what measure of variability is reported with the mean.
+
+If the summary statistics are presented in graphical form (a Figure), you can simply report the result in the text without verbalizing the summary values:
+
+"Mean total length of brown trout in Sebago Lake increased by $3.8 cm$ between May and September, 1994 (Fig. 5)."
+
+Frequencies: Frequency data should be summarized in the text with appropriate measures such as percents, proportions, or ratios.
+
+"During the fall turnover period, an estimated $47\%$ of brown trout and $24\%$ of brook trout were concentrated in the deepest parts of the lake (Table 3)."
+
+
+      
+        
+\section{Results of Inferential (Hypothesis) Tests}
+
+     In this example, the key result is shown in blue and the statistical result, which substantiates the finding, is in red.
+
+"Mean total length of brown trout in Sebago Lake increased significantly$ (3.8 cm)$ between May$ (34.4 ± 12.4 cm, n=128)$ and September$ (38.2 ± 11.7 cm, n = 114) $1994 (twosample t-test,$ p < 0.001$)."
+
+NOTE: AVOID writing whole sentences which simply say what test you used to analyze a result followed by another giving the result. This wastes precious words (economy!!) and unnecessarily increases your paper's length.
+      
+
+<<label=prob2, echo=T,eval=T>>=
+ch20data<-read.table("~/Courses/STAT571A/Data/CH01PR20.txt",sep="")
+names(ch20data)<-c("Y","X")
+lm20<-lm(Y~X,data=ch20data)
+newdata<-data.frame(X=5)
+lm.pred<-predict(lm20,newdata,interval="prediction",level=0.95)
+attach(ch20data)
+ppdf("Ch01PR20Plot",w=6,h=6)
+plot(Y~X)
+abline(lm(Y~X,data=ch20data))
+doff()
+detach(ch20data)
+require(xtable)
+est.table20<-xtable(lm20,caption="Parameter Estimates from regression model",label="reg1",digits=c(0,2,2,2,4))
+
+#
+@ 
+
+
+
+<<label=pcaana,results=tex,echo=F,eval=T>>=
+print(est.table20)
+#print(cor.result)
+
+#latex(out.summary[,-1],file = "", n.rgroup = c(2,2,2,2), rowname=out.summary[,1],rgroup = c("MSPSS","PSS","DUSOCS-Family","DUSOCS-Non-Family"), rgroupTexCmd = "bfseries",numeric.dollar = FALSE, title = "", ctable = TRUE, label = "tab:out", caption = "Estimated  effects from regression model ",here=TRUE)
+
+#latex(med.fit.summary,file = "", n.rgroup = c(3,3,3,3), rowname=rep(c("Indirect Effect","Direct Effect","Total effect"),4),rgroup = c("MSPSS","PSS","DUSOCS-Family","DUSOCS-Non-Family"), rgroupTexCmd = "bfseries",numeric.dollar = FALSE, title = "", ctable = TRUE, label = "tab:med", caption = "Estimated  effects from individual mediator models. ",here=TRUE)
+
+
+#latex(round(est.table[,-c(1:2)],digits=2),file = "", n.rgroup = c(5,1,1,1,1), rowname=est.table[,2],rgroup = c("Total FQOL","MSPSS","PSS","DUSOCS-Family","DUSOCS-Non-Family"), rgroupTexCmd = "bfseries",numeric.dollar = FALSE, title = "", ctable = TRUE, label = "tab:multi", caption = "Estimated  effects from multiple mediator models. ",here=TRUE)
+@ 
+ 
+
+\section{Summarizing Statistical Test Outcomes in Figures}
+
+       (a)$ \hat{Y}=10+4X$\\
+     
+     \begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=3in,width=3in]{/Users/mlu/Desktop/Rplot21.pdf}
+     \caption{Airfreight breakage }
+     \end{center}
+     \end{figure}
+
+
+        A linear regression function appear to give a good fit. Because adjusted $R^2$ is equal to 0.8885\\
+        
+       (b)$ \hat{Y}=14.2$\\
+
+       (c)Decrease 4\\
+       
+       (d)$\because \hat{Y}=\overline{Y}-\hat{\beta}\overline{X}+\hat{\beta}X$\\
+           We bring $(\overline{X},\overline{Y})$ into the fitted model, and we get the following result:\\
+           $\overline{Y}= \overline{Y}-\hat{\beta}\overline{X}+\hat{\beta}\overline{X}$\\
+           We verify the fitted regression line goes through the point$(\overline{X},\overline{Y})$\\
+         The followings are R codes:
+      
+<<label=prob1,echo=T,eval=T>>=
+     require(xtable)
+         x<-c(1,0,2,0,3,1,0,1,2,0)
+         y<-c(16,9,17,12,22,13,8,15,19,11)
+         ch21data<-data.frame(x,y)
+         lm21<-lm(y~x,data=ch21data)
+         attach(ch21data)
+         pdf('Rplot21.pdf')
+         plot(y~x);abline(lm(y~x,data=ch21data))
+         dev.off()
+         detach(ch21data)
+         summary(lm21)
+         newdata<-data.frame(x=1)
+         lm.pred<-predict(lm21,newdata,interval="prediction",level=0.95)
+
+est.table21<-xtable(lm21,caption="Parameter Estimates from regression model",label="reg21",digits=c(0,2,2,2,4))
+
+@ 
+
+<<label=ch21est,echo=F,results=tex,eval=T>>=
+print(est.table21)
+@ 
+
+         
+\section{problem 1.28}
+          (a)$ \hat{Y}=20517.60-170.58X$\\
+          
+           \begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=3in,width=3in]{/Users/mlu/Desktop/Rplot28.pdf}
+     \caption{Crime rate}
+     \end{center}
+     \end{figure}
+              The linear regression function appear to give a bad fit here. Because the adjusted $R^2$ is equal to 0.1602\\
+              
+          (b)(1)170.58\\
+          
+               (2)6871.585\\
+               
+               (3)$\varepsilon_{10}=1401.56552$\\
+               
+               (4)$\hat{\sigma^2}=\frac{SSE}{n-2}=\frac{\Sigma(y_i-\hat{y}_i)^2}{n-2}$\\
+                   $\hat{\sigma^2}=2356$\\
+               
+              The followings are R codes:
+              
+<<label=ch28,echo=T,eval=T>>=
+
+              ch28data<-read.table("~/Courses/STAT571A/Data/CH01PR28.txt",sep="")
+              names(ch28data)<-c("Y","X")              
+              lm28<-lm(Y~X,data=ch28data)
+              attach(ch28data)
+              pdf('Rplot28.pdf')
+              plot(Y~X);abline(lm(Y~X,data=ch28data))
+              dev.off()
+              detach(ch28data)
+              summary(lm28)
+              newdata<-data.frame(X=80)
+              lm.pred<-predict(lm28,newdata,interval="prediction",level=0.95)
+est.table28<-xtable(lm28,caption="Parameter Estimates from regression model",label="reg21",digits=c(0,2,2,2,4))
+@
+
+
+<<label=ch21est,echo=F,results=tex,eval=T>>=
+print(est.table28)
+@ 
+
+              
+\section{problem 1.34}
+     Proof:\\
+     $\because \hat{\beta_0}=\overline{Y}$\\
+     $\therefore E(\hat{\beta_0})=E(\overline{Y})$\\
+     $\because \Sigma{Y_i}=\Sigma{\beta_0}+\Sigma{\varepsilon_i}$\\
+     $\therefore \overline{Y}=\beta_0+\frac{\Sigma{\varepsilon_i}}{n}$\\
+     $\therefore E(\hat{\beta_0})=E(\overline{Y})=\beta_0+E(\frac{\Sigma{\varepsilon_i}}{n})=\beta_0$\\
+     
+<<label=ch28,echo=T,eval=T>>=
+install.packages("gplots","HH","rrcov","mvoutlier")
+
+mydata<-read.csv("/Users/mlu/Courses/CPH576C/Data/support_data.csv",sep=",")
+require(fields)
+summ1<-stats(mydata)
+pro1.data<-mydata[,c("age","sex","dzgroup","num.co","scoma","race","meanbp","hrt","temp","pafi","alb","totcst")]
+head(pro1.data)
+summ2<-stats(pro1.data)
+ana.data<-pro1.data[complete.cases(pro1.data),]#delete missing data
+summ3<-stats(ana.data)
+pro2.data<-subset(pro1.data,!is.na(totcst)) #select the subset of data frame
+pdf("Project1ScatterplotMatrix.pdf")
+pairs(pro2.data)# draw scatter plot matrix
+dev.off()
+attach(pro2.data)
+pdf("Project1boxplot1.pdf")
+par(mfrow=c(2,2))
+boxplot(totcst~sex)
+boxplot(totcst~race)
+boxplot(totcst~dzgroup)
+dev.off()
+pdf("Project1boxplot2.pdf")
+par(mfrow=c(2,2))
+boxplot(log(totcst)~sex)
+boxplot(log(totcst)~race)
+boxplot(log(totcst)~dzgroup)
+dev.off()
+projectmodel<-lm(totcst~age+factor(sex)+factor(dzgroup)+num.co+scoma+factor(race)+meanbp+hrt+temp+pafi+alb,data=pro2.data)
+summary(projectmodel)
+par(mfrow=c(2,2))
+plot(projectmodel)
+projectmode2<-lm(log(totcst)~age+factor(sex)+factor(dzgroup)+num.co+scoma+factor(race)+meanbp+hrt+temp+pafi+alb,data=pro2.data)
+summary(projectmode2)
+require("car")
+confint(projectmodel2)
+qqPlot(projectmodel2,id.method="identify",simulate=TRUE,main="QQ Plot")
+res<-residuals(projectmodel2)
+outlierTest(projectmodel2)
+influencePlot(projectmodel2)
+durbinWatsonTest(projectmodel2)
+vif(projectmodel2)
+crPlots(projectmodel2)
+ncvTest(projectmodel2)
+spreadLevelPlot(projectmodel2)
+install.packages("gvlma")
+require("gvlma")
+gvmodel<-gvlma(projectmodel2)
+summary(gvmodel)
+avPlots(projectmodel2,ask=F,onepage=T,id,method="identify")
+hat.plot <- function(projectmodel2) {
+p <- length(coefficients(projectmodel2))
+n <- length(fitted(projectmodel2))
+plot(hatvalues(projectmodel2), main="Index Plot of Hat Values")
+abline(h=c(2,3)*p/n, col="red", lty=2)
+identify(1:n, hatvalues(projectmodel2), names(hatvalues(projectmdoel2)))
+}
+hat.plot(projectmodel2)
+cutoff <- 4/(nrow(f1l)-length(projectmodel2$coefficients)-2)
+plot(fit, which=4, cook.levels=cutoff)
+abline(h=cutoff, lty=2, col="red")
+
+anova(projectmodel)
+
+
+
+
+@ 
+
+
+ 
+ \end{document}
+
+ 

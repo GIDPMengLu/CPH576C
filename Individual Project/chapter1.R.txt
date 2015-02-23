@@ -1,0 +1,179 @@
+# $Id: chapter1.R,v 1.4 2009/06/12 19:58:08 nhorton Exp $
+
+###################################################
+### chunk number 1: 
+###################################################
+options(digits=3)
+options(width=72) # narrow output 
+ds <- read.csv("http://www.math.smith.edu/sasr/datasets/help.csv")
+newds <- ds[,c("cesd","female","i1","i2","id","treat","f1a","f1b",
+   "f1c","f1d","f1e","f1f","f1g","f1h","f1i","f1j","f1k","f1l","f1m",
+   "f1n","f1o","f1p","f1q","f1r","f1s","f1t")]
+
+
+###################################################
+### chunk number 2: 
+###################################################
+attach(newds)
+names(newds)
+# structure of the first 10 variables
+str(newds[,1:10])
+
+
+###################################################
+### chunk number 3: 
+###################################################
+head(newds, n=5)
+
+
+###################################################
+### chunk number 4: 
+###################################################
+comment(newds) <- "HELP baseline dataset"
+comment(newds)
+save(ds, file="savedfile")
+
+
+###################################################
+### chunk number 5: 
+###################################################
+library(foreign)
+write.foreign(newds, "file.dat", "file.sas", package="SAS")
+
+
+###################################################
+### chunk number 6: 
+###################################################
+cesd[1:10]
+
+
+###################################################
+### chunk number 7: 
+###################################################
+cesd[cesd>55]
+# which rows have values this high?
+which(cesd>55)
+
+
+###################################################
+### chunk number 8: 
+###################################################
+sort(cesd)[1:4]
+
+
+###################################################
+### chunk number 9: 
+###################################################
+table(is.na(f1g))
+# reverse code f1d, f1h, f1l and f1p
+cesditems <- cbind(f1a, f1b, f1c, (3 - f1d), f1e, f1f, f1g, 
+   (3 - f1h), f1i, f1j, f1k, (3 - f1l), f1m, f1n, f1o, (3 - f1p), 
+   f1q, f1r, f1s, f1t)
+nmisscesd <- apply(is.na(cesditems), 1, sum)
+ncesditems <- cesditems
+ncesditems[is.na(cesditems)] <- 0
+newcesd <- apply(ncesditems, 1, sum)
+imputemeancesd <- 20/(20-nmisscesd)*newcesd
+
+
+###################################################
+### chunk number 10: 
+###################################################
+cbind(newcesd, cesd, nmisscesd, imputemeancesd)[nmisscesd>0,]
+
+
+###################################################
+### chunk number 11: 
+###################################################
+# create empty repository for new variable
+drinkstat <- character(length(i1))
+# create abstinent group
+drinkstat[i1==0] <- "abstinent"
+# create moderate group
+drinkstat[(i1>0 & i1<=1 & i2<=3 & female==1) | 
+ (i1>0 & i1<=2 & i2<=4 & female==0)] <- "moderate"
+# create highrisk group
+drinkstat[((i1>1 | i2>3) & female==1) | 
+ ((i1>2 | i2>4) & female==0)] <- "highrisk"
+# do we need to account for missing values?
+is.na(drinkstat) <- is.na(i1) | is.na(i2) | is.na(female)
+table(is.na(drinkstat))
+# no, all constituent variables are observed on all subjects
+
+
+###################################################
+### chunk number 12: 
+###################################################
+tmpds <- data.frame(i1, i2, female, drinkstat)
+tmpds[361:370,]
+
+
+###################################################
+### chunk number 13: 
+###################################################
+tmpds[tmpds$drinkstat=="moderate" & tmpds$female==1,]
+
+
+###################################################
+### chunk number 14: 
+###################################################
+sum(is.na(drinkstat))
+table(drinkstat, exclude="NULL")
+
+
+###################################################
+### chunk number 15: 
+###################################################
+table(drinkstat, female, exclude="NULL")
+
+
+###################################################
+### chunk number 16: 
+###################################################
+gender <- factor(female, c(0,1), c("male","Female"))
+table(female)
+table(gender)
+
+
+###################################################
+### chunk number 17: 
+###################################################
+detach(newds)
+newds <- ds[order(ds$cesd, ds$i1),]
+newds[1:5,c("cesd", "i1", "id")]
+
+
+###################################################
+### chunk number 18: 
+###################################################
+females <- ds[ds$female==1,]
+attach(females)
+mean(cesd)
+
+
+###################################################
+### chunk number 19: 
+###################################################
+tapply(ds$cesd, ds$female, mean)
+
+
+###################################################
+### chunk number 20: 
+###################################################
+x <- seq(from=-4, to=4.2, length=100)
+normval <- dnorm(x, 0, 1)
+dfval <- 1
+tval <- dt(x, df=dfval)
+
+
+###################################################
+### chunk number 22: 
+###################################################
+plot(x, normval, type="n", ylab="f(x)", las=1)
+lines(x, normval, lty=1, lwd=2)
+lines(x, tval, lty=2, lwd=2)
+legend(1.1, .395, lty=1:2, lwd=2, 
+   legend=c(expression(N(mu == 0,sigma == 1)),
+   paste("t with ", dfval," df", sep="")))
+
+

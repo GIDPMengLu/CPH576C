@@ -1,0 +1,47 @@
+# this code installs the add-on packages 
+# needed to run the examples in the text
+# SAS and R: Data Management, Statistical Analysis, and Graphics
+# by Kleinman and Horton 
+# http://www.math.smith.edu/sasr
+# $Id: install.R,v 1.2 2009/06/12 19:58:08 nhorton Exp $
+#
+install.packages(c(
+"Design",
+"Hmisc",
+"MASS",
+"MCMCpack",
+"Matrix",
+"ROCR",
+"VGAM",
+"XML",
+"boot",
+"coda",
+"coin",
+"dispmod",
+"ellipse",
+"epitools",
+"exactRankTests",
+"gam",
+"gee",
+"ggplot2",
+"gtools",
+"gmodels",
+"hwriter",
+"irr",
+"lattice",
+"lme4",
+"mice",
+"multcomp",
+"multilevel",
+"nlme",
+"plotrix",
+"prettyR",
+"pscl",
+"quantreg",
+"reshape",
+"rpart",
+"sqldf",
+"survey",
+"survival",
+"vcd"
+))

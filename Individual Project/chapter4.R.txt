@@ -1,0 +1,266 @@
+# $Id: chapter4.R,v 1.4 2009/06/24 14:41:59 nhorton Exp $
+
+###################################################
+### chunk number 1: 
+###################################################
+options(digits=3)
+# R code has been edited to facilitate reading data from the web
+ds <- read.csv("http://www.math.smith.edu/sasr/datasets/help.csv")
+#load("savedfile")
+
+# uncomment next line to pause between plots 
+#devAskNewPage(ask=TRUE)
+
+options(show.signif.stars=FALSE)
+attach(ds)
+
+
+###################################################
+### chunk number 2: 
+###################################################
+logres <- glm(homeless ~ female + i1 + substance + sexrisk + indtot,
+   binomial)
+summary(logres)
+
+
+###################################################
+### chunk number 3: 
+###################################################
+names(summary(logres))
+coeff.like.SAS <- summary(logres)$coefficients
+coeff.like.SAS
+
+
+###################################################
+### chunk number 4: 
+###################################################
+poisres <- glm(i1 ~ female + substance + age, poisson)
+summary(poisres)
+
+
+###################################################
+### chunk number 5: 
+###################################################
+library(vcd)
+poisfit <- goodfit(e2b, "poisson")
+summary(poisfit)
+
+
+###################################################
+### chunk number 6: 
+###################################################
+library(pscl)
+
+
+###################################################
+### chunk number 7: 
+###################################################
+res <- zeroinfl(i1 ~ female + substance + age | female, data=ds)
+res
+
+
+###################################################
+### chunk number 8: 
+###################################################
+library(MASS)
+nbres <- glm.nb(i1 ~ female + substance + age)
+summary(nbres)
+
+
+###################################################
+### chunk number 9: 
+###################################################
+library(quantreg)
+quantres <- rq(i1 ~ female + substance + age, tau=0.75, data=ds)
+summary(quantres)
+detach("package:quantreg")
+
+
+###################################################
+### chunk number 10: 
+###################################################
+library(MASS)
+sexriskcat <- as.factor(as.numeric(sexrisk>=2) + as.numeric(sexrisk>=6))
+ologit <- polr(sexriskcat ~ cesd + pcs)
+summary(ologit)
+
+
+###################################################
+### chunk number 11: 
+###################################################
+library(VGAM)
+mlogit <- vglm(sexriskcat ~ cesd + pcs, family=multinomial())
+
+
+###################################################
+### chunk number 12: 
+###################################################
+summary(mlogit)
+detach("package:VGAM")
+
+
+###################################################
+### chunk number 13: 
+###################################################
+library(gam)
+gamreg<- gam(cesd ~ female + lo(pcs) + substance)
+
+
+###################################################
+### chunk number 14: 
+###################################################
+summary(gamreg)
+coefficients(gamreg)
+
+
+###################################################
+### chunk number 16: gamplot
+###################################################
+plot(gamreg, terms=c("lo(pcs)"), se=2, lwd=3)
+abline(h=0)
+
+
+###################################################
+### chunk number 17: 
+###################################################
+long <- reshape(ds, idvar="id", 
+   varying=list(c("cesd1","cesd2","cesd3","cesd4"),
+   c("mcs1","mcs2","mcs3","mcs4"), c("i11","i12","i13","i14"),
+   c("g1b1","g1b2","g1b3","g1b4")), 
+   v.names=c("cesdtv","mcstv","i1tv","g1btv"),
+   timevar="time", times=1:4, direction="long")
+detach(ds)
+
+
+###################################################
+### chunk number 18: 
+###################################################
+table(long$g1btv, long$time)
+
+
+###################################################
+### chunk number 19: 
+###################################################
+attach(long)
+long[id==1, c("id", "time", "cesd", "cesdtv")]
+detach(long)
+
+
+###################################################
+### chunk number 20: 
+###################################################
+wide <- reshape(long, 
+   v.names=c("cesdtv", "mcstv", "i1tv", "g1btv"), 
+   idvar="id", timevar="time", direction="wide")
+wide[c(2,8), c("id", "cesd", "cesdtv.1", "cesdtv.2", "cesdtv.3",
+   "cesdtv.4")]
+
+
+###################################################
+### chunk number 21: 
+###################################################
+library(nlme)
+glsres <- gls(cesdtv ~ treat + as.factor(time), 
+   correlation=corSymm(form = ~ time | id),
+   weights=varIdent(form = ~ 1 | time), long, na.action=na.omit)
+
+
+###################################################
+### chunk number 22: 
+###################################################
+summary(glsres)
+
+
+###################################################
+### chunk number 23: 
+###################################################
+anova(glsres)
+
+
+###################################################
+### chunk number 24: sbsrplot eval=FALSE
+###################################################
+library(lattice)
+bwplot(cesdtv ~ as.factor(treat)| time, xlab="TREAT", 
+   strip=strip.custom(strip.names=TRUE, strip.levels=TRUE), 
+   ylab="CESD", layout=c(4,1), col="black", data=long,
+   par.settings=list(box.rectangle=list(col="black"), 
+      box.dot=list(col="black"), box.umbrella=list(col="black")))
+
+
+###################################################
+### chunk number 25: 
+###################################################
+attach(long)
+tf <- as.factor(time)
+library(nlme)
+lmeslope <- lme(fixed=cesdtv ~ treat + tf,
+   random=~ time |id, data=long, na.action=na.omit)
+print(lmeslope)
+
+
+###################################################
+### chunk number 26: 
+###################################################
+anova(lmeslope)
+
+
+###################################################
+### chunk number 27: 
+###################################################
+reffs <- random.effects(lmeslope)
+reffs[1,]
+
+
+###################################################
+### chunk number 28: 
+###################################################
+predval <- predict(lmeslope, newdata=long, level=0:1)
+predval[id==1,]
+
+
+###################################################
+### chunk number 29: 
+###################################################
+vc <- VarCorr(lmeslope)
+summary(vc)
+detach(long)
+
+
+###################################################
+### chunk number 30: 
+###################################################
+library(gee)
+sortlong <- long[order(long$id),]
+attach(sortlong)
+geeres <- gee(formula = g1btv ~ treat + time, id=id, data=sortlong, 
+   family=binomial, na.action=na.omit, corstr="exchangeable")
+detach(sortlong)
+
+
+###################################################
+### chunk number 31: 
+###################################################
+coef(geeres)
+sqrt(diag(geeres$robust.variance))
+geeres$working.correlation
+
+
+###################################################
+### chunk number 32: 
+###################################################
+library(lme4)
+glmmres <- lmer(g1btv ~ treat + cesdtv + time + (1|id),
+   family=binomial(link="logit"), data=long)
+summary(glmmres)
+
+
+###################################################
+### chunk number 33: 
+###################################################
+library(survival)
+survobj <- coxph(Surv(dayslink, linkstatus) ~ treat + age + female + 
+   cesd, method="breslow", data=ds)
+print(survobj)
+
+

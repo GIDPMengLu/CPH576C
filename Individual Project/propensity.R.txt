@@ -1,0 +1,90 @@
+# example 7.34
+# http://sas-and-r.blogspot.com/2010/04/example-734-propensity-scores-and.html
+
+ds = read.csv("http://www.math.smith.edu/r/data/help.csv")
+attach(ds)
+summary(lm(pcs ~ homeless))
+
+form = formula(homeless ~ age + female + i1 + mcs)
+glm1 = glm(form, family=binomial)
+X = glm1$fitted
+
+tapply(X, homeless, FUN=fivenum)
+
+par(mfrow=c(2,1))
+hist(X[homeless==0], xlim=c(0.2,1))
+hist(X[homeless==1], xlim=c(0.2,1))
+
+summary(lm(pcs ~ homeless + X, subset=(X<.8)))
+
+
+# example 7.35
+# http://sas-and-r.blogspot.com/2010/05/example-735-propensity-score-matchingn.html
+library(Matching)
+rr = Match(Y=pcs, Tr=homeless, X=X, M=1)
+summary(rr)
+
+MatchBalance(form, match.out=rr, nboots=10)
+
+
+# example 7.36
+breakvals = fivenum(X)   # 2.1.4
+strat = cut(X, breaks=breakvals, 
+   labels=c('bot quart', '2nd quart', '3rd quart', 'top quart'), include.lowest=TRUE)
+topval = 82
+botval = 15
+cexval=.6
+eps = 3
+boxplot(pcs[homeless==0 & strat=='bot quart'], pcs[homeless=1 & strat=='bot quart'],
+pcs[homeless==0 & strat=='2nd quart'], pcs[homeless=1 & strat=='2nd quart'],
+pcs[homeless==0 & strat=='3rd quart'], pcs[homeless=1 & strat=='3rd quart'],
+pcs[homeless==0 & strat=='top quart'], pcs[homeless=1 & strat=='top quart'], pcs[homeless==0], pcs[homeless==1], ylim=c(botval,topval), xaxt="n", ylab="PCS score")
+abline(v=2.5)
+abline(v=4.5)
+abline(v=6.5)
+abline(v=8.5, lwd=2)
+
+
+
+text(1, topval, "not\nhomeless", cex=cexval)
+text(2, topval, "homeless", cex=cexval)
+text(3, topval, "not\nhomeless", cex=cexval)
+text(4, topval, "homeless", cex=cexval)
+text(5, topval, "not\nhomeless", cex=cexval)
+text(6, topval, "homeless", cex=cexval)
+text(7, topval, "not\nhomeless", cex=cexval)
+text(8, topval, "homeless", cex=cexval)
+text(9, topval, "not\nhomeless", cex=cexval)
+text(10, topval, "homeless", cex=cexval)
+
+text(1.5, botval+eps, "bot quart")
+text(3.5, botval+eps, "2nd quart")
+text(5.5, botval+eps, "3rd quart")
+text(7.5, botval+eps, "top quart")
+text(9.5, botval+eps, "overall")
+
+text(1, topval-eps, paste("n=",sum(homeless==0 & strat=='bot quart', na.rm=TRUE),sep=""), cex=cexval)
+text(2, topval-eps, paste("n=",sum(homeless==1 & strat=='bot quart', na.rm=TRUE),sep=""), cex=cexval)
+text(3, topval-eps, paste("n=",sum(homeless==0 & strat=='2nd quart', na.rm=TRUE),sep=""), cex=cexval)
+text(4, topval-eps, paste("n=",sum(homeless==1 & strat=='2nd quart', na.rm=TRUE),sep=""), cex=cexval)
+text(5, topval-eps, paste("n=",sum(homeless==0 & strat=='3rd quart', na.rm=TRUE),sep=""), cex=cexval)
+text(6, topval-eps, paste("n=",sum(homeless==1 & strat=='3rd quart', na.rm=TRUE),sep=""), cex=cexval)
+text(7, topval-eps, paste("n=",sum(homeless==0 & strat=='top quart', na.rm=TRUE),sep=""), cex=cexval)
+text(8, topval-eps, paste("n=",sum(homeless==1 & strat=='top quart', na.rm=TRUE),sep=""), cex=cexval)
+text(9, topval-eps, paste("n=",sum(homeless==0, na.rm=TRUE),sep=""), cex=cexval)
+text(10, topval-eps, paste("n=",sum(homeless==1, na.rm=TRUE),sep=""), cex=cexval)
+
+stratdf = data.frame(pcs, homeless, strat)
+out = by(stratdf, strat, 
+   function(mydataframe) {with(mydataframe, 
+      t.test(pcs[homeless==0], pcs[homeless==1])) 
+   })
+
+
+
+
+
+
+
+
+

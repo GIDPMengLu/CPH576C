@@ -1,0 +1,190 @@
+# $Id: chapter5.R,v 1.4 2009/06/24 14:41:59 nhorton Exp $
+
+###################################################
+### chunk number 1: 
+###################################################
+options(digits=3)
+
+# R code has been edited to facilitate reading data from the web
+ds <- read.csv("http://www.math.smith.edu/sasr/datasets/help.csv")
+attach(ds)
+
+# uncomment next line to pause between plots 
+#devAskNewPage(ask=TRUE)
+
+
+
+###################################################
+### chunk number 2: 
+###################################################
+plottwoy <- function(x, y1, y2, xname="X", y1name="Y1", y2name="Y2")
+{
+   plot(x, y1, ylab=y1name, xlab=xname)
+   lines(lowess(x, y1), lwd=3)
+   addsecondy(x, y2, y1, yname=y2name)
+}
+
+
+###################################################
+### chunk number 3: 
+###################################################
+addsecondy <- function(x, y, origy, yname="Y2") {
+   prevlimits <- range(origy)
+   axislimits <- range(y)
+   axis(side=4, at=prevlimits[1] + diff(prevlimits)*c(0:5)/5,
+      labels=round(axislimits[1] + diff(axislimits)*c(0:5)/5, 1))
+   mtext(yname, side=4)
+   newy <- (y-axislimits[1])/(diff(axislimits)/diff(prevlimits)) +
+      prevlimits[1]
+   points(x, newy, pch=2)
+   lines(lowess(x, newy), lty=2, lwd=3)
+}
+
+
+###################################################
+### chunk number 5: 
+###################################################
+plottwoy(cesd[female==1&substance=="alcohol"], 
+   indtot[female==1&substance=="alcohol"], 
+   mcs[female==1&substance=="alcohol"], xname="cesd",
+   y1name="indtot", y2name="mcs")
+
+
+###################################################
+### chunk number 6: 
+###################################################
+library(lattice)
+
+
+###################################################
+### chunk number 8: 
+###################################################
+suicidal.thoughts <- as.factor(g1b)
+coplot(mcs ~ cesd | suicidal.thoughts*substance, 
+   panel=panel.smooth)
+
+
+###################################################
+### chunk number 9: 
+###################################################
+library(survival)
+survobj <- survfit(Surv(dayslink, linkstatus) ~ treat)
+print(survobj)
+
+
+###################################################
+### chunk number 11: condplot
+###################################################
+plot(survobj, lty=1:2, lwd=2, col=c(4,2))
+title("Product-Limit Survival Estimates")
+legend(250, .75, legend=c("Control", "Treatment"), lty=c(1,2), lwd=2,
+   col=c(4,2), cex=1.4)
+
+
+###################################################
+### chunk number 12: 
+###################################################
+library(ROCR)
+pred <- prediction(cesd, g1b)
+auc <- slot(performance(pred, "auc"), "y.values")[[1]]
+
+
+###################################################
+### chunk number 14: 
+###################################################
+plot(performance(pred, "tpr", "fpr"),
+   print.cutoffs.at=seq(from=20, to=50, by=5),
+   text.adj=c(1, -.5), lwd=2)
+lines(c(0, 1), c(0, 1))
+text(.6, .2, paste("AUC=", round(auc,3), sep=""), cex=1.4)
+title("ROC Curve for Model")
+
+
+###################################################
+### chunk number 15:  eval=FALSE
+###################################################
+pairs(c(ds[72:74], ds[67]))
+
+
+###################################################
+### chunk number 16:  eval=FALSE
+###################################################
+pairs(ds[c("pcs", "mcs", "cesd", "i1")])
+
+
+###################################################
+### chunk number 17: 
+###################################################
+panel.hist <- function(x, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(usr[1:2], 0, 1.5) )
+    h <- hist(x, plot=FALSE)
+    breaks <- h$breaks; nB <- length(breaks)
+    y <- h$counts; y <- y/max(y)
+    rect(breaks[-nB], 0, breaks[-1], y, col="cyan", ...)
+}
+
+
+###################################################
+### chunk number 18: 
+###################################################
+panel.lm <- function(x, y, col=par("col"), bg=NA, pch=par("pch"), 
+    cex=1, col.lm="red", ...) 
+{
+    points(x, y, pch=pch, col=col, bg=bg, cex=cex)
+    ok <- is.finite(x) & is.finite(y)
+    if (any(ok)) 
+        abline(lm(y[ok] ~ x[ok]))
+}
+
+
+###################################################
+### chunk number 20: 
+###################################################
+pairs(~ cesd + mcs + pcs + i1, subset=(female==1), 
+   lower.panel=panel.smooth, diag.panel=panel.hist, 
+   upper.panel=panel.lm)
+
+
+###################################################
+### chunk number 21: 
+###################################################
+cormat <- cor(cbind(mcs, pcs, pss_fr, drugrisk, cesd, indtot, i1,
+   sexrisk), use="pairwise.complete.obs")
+oldopt <- options(digits=2)
+cormat
+options(oldopt)
+
+
+###################################################
+### chunk number 22: 
+###################################################
+drugrisk[is.na(drugrisk)] <- 0
+panel.corrgram <- function(x, y, z, at, level=0.9, label=FALSE, ...)
+{
+   require("ellipse", quietly=TRUE)
+   zcol <- level.colors(z, at=at, col.regions=gray.colors)
+   for (i in seq(along=z)) {
+      ell <- ellipse(z[i], level=level, npoints=50, 
+         scale=c(.2, .2), centre=c(x[i], y[i]))
+      panel.polygon(ell, col=zcol[i], border=zcol[i], ...)
+   }
+   if (label)
+      panel.text(x=x, y=y, lab=100*round(z, 2), cex=0.8,
+         col=ifelse(z < 0, "white", "black"))
+}
+
+
+###################################################
+### chunk number 24: 
+###################################################
+library(ellipse)
+library(lattice)
+print(levelplot(cormat, at=do.breaks(c(-1.01, 1.01), 20),
+   xlab=NULL, ylab=NULL, colorkey=list(space = "top",
+   col=gray.colors), scales=list(x=list(rot = 90)), 
+   panel=panel.corrgram,
+   label=TRUE))
+
+

@@ -1,0 +1,276 @@
+
+\documentclass{article}
+\usepackage[pdftex]{graphicx}
+\usepackage{rotating}
+\usepackage{amsmath}
+\usepackage{authblk}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{fullpage}
+\usepackage{Sweave}
+\usepackage{pdflscape}
+\usepackage{amsmath}   
+\usepackage{amssymb}
+\usepackage{wasysym}
+\usepackage{ctable}
+\newcommand{\fg}[3]{\begin{figure}[htbp]%
+        \leavevmode%
+        \centerline{\includegraphics{#1}}%
+        \caption{#3}%
+        \label{#2}%
+        \end{figure}}
+%\fgh{basefilename}{label}{caption}{short caption for TOC}
+\newcommand{\fgh}[4]{\begin{figure}[htbp]%
+        \leavevmode%
+        \centerline{\includegraphics{#1}}%
+        \caption[#4]{#3}%
+        \label{#2}%
+        \end{figure}}
+\begin{document} 
+\SweaveOpts{concordance=TRUE}
+\SweaveOpts{fig=FALSE, results=hide, echo=TRUE}
+
+\title{STAT571A Homework 1}
+%\author[1]{\small{Bruce Barber}}
+\author{\small{Meng Lu}}
+
+\affil{\footnotesize{GIDP Statistics \\ Email: menglu@email.arizona.edu}}
+%\affil[2]{\footnotesize{Department of Pediatric, The University of Arizona}}
+%\affil[2]{\footnotesize{Statistical Consulting Laboratory \\ email: zlu@arizona.edu}}
+
+\maketitle
+\section{Problem 1.2}
+         $Y=300+2X$\\
+   
+     Functional relation\\
+                
+            
+\section{Problem 1.4}
+     The response $Y_i$ in the $i$th trial is the sum of two components: (1) the constant term
+     $\beta_0 + \beta_1X_i$ and (2) the random term $\varepsilon_i$ . Hence, $Y_i$ is a random variable.\\
+     The response $Y_i$ in the $i$th trial exceeds or falls short of the value of the regression
+     function by the error term amount $\varepsilon_i$.\\
+     In summary, regression model (1.1) implies that the responses $Y_i$ come from probability
+     distributions whose means are $E(Y_i)$ = $\beta_0 + \beta_1X_i$ and whose variances are $\sigma^2$, the
+     same for all levels of $X$. Further, any two responses $Y_i$ and $Y_j$ are uncorrelated.
+\section{Problem 1.9}
+      The functional form of the regression relation is not known in
+      advance and must be decided upon empirically once the data have been collected. Linear
+      or quadratic regression functions are often used as satisfactory first approximations to
+      regression functions of unknown nature. Indeed, these simple types of regression functions
+      may be used even when theory provides the relevant functional form, notably when the
+      known form is highly complex but can be reasonably approximated by a linear or quadratic
+      regression function.
+      The existence of a statistical relation between the response variable $Y$ and the explanatory or
+      predictor variable$X$ does not imply in anyway that$ Y$ depends
+      causally on$X$. Nomatter how strong is the statistical relation
+      between $X$ and$Y$, no cause-and-effect pattern is necessarily
+      implied by the regression model.
+      
+        
+\section{Problem 1.20}
+
+      (a)$ \hat{Y}=-0.5802+15.0352X$\\
+      
+      (d)$ \hat{Y}=74.59608$\\
+      
+       The followings are R codes:\\
+           
+      
+
+<<label=prob2, echo=T,eval=T>>=
+ch20data<-read.table("~/Courses/STAT571A/Data/CH01PR20.txt",sep="")
+names(ch20data)<-c("Y","X")
+lm20<-lm(Y~X,data=ch20data)
+newdata<-data.frame(X=5)
+lm.pred<-predict(lm20,newdata,interval="prediction",level=0.95)
+attach(ch20data)
+ppdf("Ch01PR20Plot",w=6,h=6)
+plot(Y~X)
+abline(lm(Y~X,data=ch20data))
+doff()
+detach(ch20data)
+require(xtable)
+est.table20<-xtable(lm20,caption="Parameter Estimates from regression model",label="reg1",digits=c(0,2,2,2,4))
+
+#
+@ 
+
+
+
+<<label=pcaana,results=tex,echo=F,eval=T>>=
+print(est.table20)
+#print(cor.result)
+
+#latex(out.summary[,-1],file = "", n.rgroup = c(2,2,2,2), rowname=out.summary[,1],rgroup = c("MSPSS","PSS","DUSOCS-Family","DUSOCS-Non-Family"), rgroupTexCmd = "bfseries",numeric.dollar = FALSE, title = "", ctable = TRUE, label = "tab:out", caption = "Estimated  effects from regression model ",here=TRUE)
+
+#latex(med.fit.summary,file = "", n.rgroup = c(3,3,3,3), rowname=rep(c("Indirect Effect","Direct Effect","Total effect"),4),rgroup = c("MSPSS","PSS","DUSOCS-Family","DUSOCS-Non-Family"), rgroupTexCmd = "bfseries",numeric.dollar = FALSE, title = "", ctable = TRUE, label = "tab:med", caption = "Estimated  effects from individual mediator models. ",here=TRUE)
+
+
+#latex(round(est.table[,-c(1:2)],digits=2),file = "", n.rgroup = c(5,1,1,1,1), rowname=est.table[,2],rgroup = c("Total FQOL","MSPSS","PSS","DUSOCS-Family","DUSOCS-Non-Family"), rgroupTexCmd = "bfseries",numeric.dollar = FALSE, title = "", ctable = TRUE, label = "tab:multi", caption = "Estimated  effects from multiple mediator models. ",here=TRUE)
+@ 
+ 
+
+\section{problem 1.21}
+
+       (a)$ \hat{Y}=10+4X$\\
+     
+     \begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=3in,width=3in]{/Users/mlu/Desktop/Rplot21.pdf}
+     \caption{Airfreight breakage }
+     \end{center}
+     \end{figure}
+
+
+        A linear regression function appear to give a good fit. Because adjusted $R^2$ is equal to 0.8885\\
+        
+       (b)$ \hat{Y}=14.2$\\
+
+       (c)Decrease 4\\
+       
+       (d)$\because \hat{Y}=\overline{Y}-\hat{\beta}\overline{X}+\hat{\beta}X$\\
+           We bring $(\overline{X},\overline{Y})$ into the fitted model, and we get the following result:\\
+           $\overline{Y}= \overline{Y}-\hat{\beta}\overline{X}+\hat{\beta}\overline{X}$\\
+           We verify the fitted regression line goes through the point$(\overline{X},\overline{Y})$\\
+         The followings are R codes:
+      
+<<label=prob1,echo=T,eval=T>>=
+     require(xtable)
+         x<-c(1,0,2,0,3,1,0,1,2,0)
+         y<-c(16,9,17,12,22,13,8,15,19,11)
+         ch21data<-data.frame(x,y)
+         lm21<-lm(y~x,data=ch21data)
+         attach(ch21data)
+         pdf('Rplot21.pdf')
+         plot(y~x);abline(lm(y~x,data=ch21data))
+         dev.off()
+         detach(ch21data)
+         summary(lm21)
+         newdata<-data.frame(x=1)
+         lm.pred<-predict(lm21,newdata,interval="prediction",level=0.95)
+
+est.table21<-xtable(lm21,caption="Parameter Estimates from regression model",label="reg21",digits=c(0,2,2,2,4))
+
+@ 
+
+<<label=ch21est,echo=F,results=tex,eval=T>>=
+print(est.table21)
+@ 
+
+         
+\section{problem 1.28}
+          (a)$ \hat{Y}=20517.60-170.58X$\\
+          
+           \begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=3in,width=3in]{/Users/mlu/Desktop/Rplot28.pdf}
+     \caption{Crime rate}
+     \end{center}
+     \end{figure}
+              The linear regression function appear to give a bad fit here. Because the adjusted $R^2$ is equal to 0.1602\\
+              
+          (b)(1)170.58\\
+          
+               (2)6871.585\\
+               
+               (3)$\varepsilon_{10}=1401.56552$\\
+               
+               (4)$\hat{\sigma^2}=\frac{SSE}{n-2}=\frac{\Sigma(y_i-\hat{y}_i)^2}{n-2}$\\
+                   $\hat{\sigma^2}=2356$\\
+               
+              The followings are R codes:
+              
+<<label=ch28,echo=T,eval=T>>=
+
+              ch28data<-read.table("~/Courses/STAT571A/Data/CH01PR28.txt",sep="")
+              names(ch28data)<-c("Y","X")              
+              lm28<-lm(Y~X,data=ch28data)
+              attach(ch28data)
+              pdf('Rplot28.pdf')
+              plot(Y~X);abline(lm(Y~X,data=ch28data))
+              dev.off()
+              detach(ch28data)
+              summary(lm28)
+              newdata<-data.frame(X=80)
+              lm.pred<-predict(lm28,newdata,interval="prediction",level=0.95)
+est.table28<-xtable(lm28,caption="Parameter Estimates from regression model",label="reg21",digits=c(0,2,2,2,4))
+@
+
+
+<<label=ch21est,echo=F,results=tex,eval=T>>=
+print(est.table28)
+@ 
+
+              
+\section{problem 1.34}
+     Proof:\\
+     $\because \hat{\beta_0}=\overline{Y}$\\
+     $\therefore E(\hat{\beta_0})=E(\overline{Y})$\\
+     $\because \Sigma{Y_i}=\Sigma{\beta_0}+\Sigma{\varepsilon_i}$\\
+     $\therefore \overline{Y}=\beta_0+\frac{\Sigma{\varepsilon_i}}{n}$\\
+     $\therefore E(\hat{\beta_0})=E(\overline{Y})=\beta_0+E(\frac{\Sigma{\varepsilon_i}}{n})=\beta_0$\\
+     
+
+\section{problem 2.5}
+    (a)
+    (b)
+    (c)
+    (d)
+
+
+\section{problem 2.6}
+     (a)
+     (b)
+     (c)
+     (d)
+
+
+\section{problem 2.6e}
+    Part b
+
+
+\section{problem 2.14}
+     (a)
+     (b)
+     (d)
+
+
+
+\section{problem 2.17}
+
+
+
+\section{problem 2.18}
+
+
+
+\section{problem 2.24}
+    (a)
+    (b)
+    (c)
+    (d)
+
+
+
+\section{problem 2.30}
+
+
+
+\section{problem 2.32}
+
+
+
+\section{problem 2.42}
+
+
+
+
+\section{problem 2.46}
+
+
+
+ 
+ \end{document}
+
+ 

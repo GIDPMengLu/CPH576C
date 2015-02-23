@@ -1,0 +1,176 @@
+# $Id: chapter2.R,v 1.4 2009/06/24 14:41:59 nhorton Exp $
+
+###################################################
+### chunk number 1: 
+###################################################
+options(digits=3)
+options(width=72)  # narrows output to stay in the grey box
+
+# R code has been edited to facilitate reading data from the web
+# uncomment next line to pause between plots 
+#devAskNewPage(ask=TRUE)
+
+ds <- read.csv("http://www.math.smith.edu/sasr/datasets/help.csv")
+attach(ds)
+
+
+###################################################
+### chunk number 2: 
+###################################################
+fivenum(cesd)
+mean(cesd); median(cesd)
+range(cesd)
+sd(cesd)
+var(cesd)
+
+
+###################################################
+### chunk number 3: 
+###################################################
+quantile(cesd, seq(from=0, to=1, length=11))
+
+
+###################################################
+### chunk number 5: bplot
+###################################################
+hist(cesd, main="", freq=FALSE)
+lines(density(cesd), main="CESD", lty=2, lwd=2)
+xvals <- seq(from=min(cesd), to=max(cesd), length=100)
+lines(xvals, dnorm(xvals, mean(cesd), sd(cesd)), lwd=2)
+
+
+###################################################
+### chunk number 6: 
+###################################################
+cormat <- cor(cbind(cesd, mcs, pcs))
+cormat
+
+
+###################################################
+### chunk number 7: 
+###################################################
+cormat[c(2, 3), 1]
+
+
+###################################################
+### chunk number 9: splot
+###################################################
+plot(cesd[female==1], mcs[female==1], xlab="CESD", ylab="MCS",
+   type="n", bty="n")
+text(cesd[female==1&substance=="alcohol"],
+   mcs[female==1&substance=="alcohol"],"A")
+text(cesd[female==1&substance=="cocaine"],
+   mcs[female==1&substance=="cocaine"],"C")
+text(cesd[female==1&substance=="heroin"],
+   mcs[female==1&substance=="heroin"],"H")
+rug(jitter(mcs[female==1]), side=2)
+rug(jitter(cesd[female==1]), side=3)
+
+
+###################################################
+### chunk number 10: 
+###################################################
+table(homeless, female)
+
+
+###################################################
+### chunk number 11: 
+###################################################
+library(prettyR)
+xtres <- xtab(homeless ~ female, data=ds)
+
+
+###################################################
+### chunk number 12: 
+###################################################
+or <- (sum(homeless==0 & female==0)*
+       sum(homeless==1 & female==1))/
+      (sum(homeless==0 & female==1)*
+       sum(homeless==1 & female==0))
+or
+
+
+###################################################
+### chunk number 13: 
+###################################################
+library(epitools)
+oddsobject <- oddsratio.wald(homeless, female)
+oddsobject$measure
+oddsobject$p.value
+
+
+###################################################
+### chunk number 14: 
+###################################################
+chisqval <- chisq.test(homeless, female, correct=FALSE)
+chisqval
+
+
+###################################################
+### chunk number 15: 
+###################################################
+fisher.test(homeless, female)
+
+
+###################################################
+### chunk number 16: 
+###################################################
+ttres <- t.test(age ~ female, data=ds)
+print(ttres)
+
+
+###################################################
+### chunk number 17: 
+###################################################
+library(coin)
+oneway_test(age ~ as.factor(female),
+   distribution=approximate(B=9999), data=ds)
+
+
+###################################################
+### chunk number 18: 
+###################################################
+wilcox.test(age ~ as.factor(female), correct=FALSE)
+
+
+###################################################
+### chunk number 19: 
+###################################################
+ksres <- ks.test(age[female==1], age[female==0], data=ds)
+print(ksres)
+
+
+###################################################
+### chunk number 20: 
+###################################################
+plotdens <- function(x,y, mytitle, mylab) {
+   densx <- density(x)
+   densy <- density(y)
+   plot(densx, main=mytitle, lwd=3, xlab=mylab, bty="l")
+   lines(densy, lty=2, col=2, lwd=3)
+   xvals <- c(densx$x, rev(densy$x))
+   yvals <- c(densx$y, rev(densy$y))
+   polygon(xvals, yvals, col="gray")
+}
+
+
+###################################################
+### chunk number 22: kdeplot
+###################################################
+mytitle <- paste("Test of ages: D=", round(ksres$statistic, 3),
+   " p=", round(ksres$p.value, 2), sep="")
+plotdens(age[female==1], age[female==0], mytitle=mytitle, 
+   mylab="age (in years)")
+legend(50, .05, legend=c("Women", "Men"), col=1:2, lty=1:2, lwd=2)
+
+
+###################################################
+### chunk number 23: 
+###################################################
+library(survival)
+survobj <- survdiff(Surv(dayslink, linkstatus) ~ treat, 
+   data=ds)
+print(survobj)
+names(survobj)
+
+

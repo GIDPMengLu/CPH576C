@@ -1,0 +1,223 @@
+# $Id: chapter3.R,v 1.4 2009/06/24 14:41:59 nhorton Exp $
+
+###################################################
+### chunk number 1: 
+###################################################
+options(digits=3)
+
+# R code has been edited to facilitate reading data from the web
+# uncomment next line to pause between plots
+#devAskNewPage(ask=TRUE)
+ds <- read.csv("http://www.math.smith.edu/sasr/datasets/help.csv")
+
+# read in Stata format
+#library(foreign)
+#ds <- read.dta("help.dta", convert.underscore=FALSE)
+
+newds <- ds[ds$female==1,]
+attach(newds)
+sub <- factor(substance, levels=c("heroin", "alcohol", "cocaine"))
+
+
+###################################################
+### chunk number 3: splot
+###################################################
+plot(age, i1, ylim=c(0,40), type="n", cex.lab=1.4, cex.axis=1.4)
+points(age[substance=="alcohol"], i1[substance=="alcohol"], pch="a")
+lines(lowess(age[substance=="alcohol"], 
+   i1[substance=="alcohol"]), lty=1, lwd=2)
+points(age[substance=="cocaine"], i1[substance=="cocaine"], pch="c")
+lines(lowess(age[substance=="cocaine"], 
+   i1[substance=="cocaine"]), lty=2, lwd=2)
+points(age[substance=="heroin"], i1[substance=="heroin"], pch="h")
+lines(lowess(age[substance=="heroin"], 
+   i1[substance=="heroin"]), lty=3, lwd=2)
+legend(44, 38, legend=c("alcohol", "cocaine", "heroin"), lty=1:3, 
+   cex=1.4, lwd=2, pch=c("a", "c", "h"))
+
+
+###################################################
+### chunk number 4: 
+###################################################
+options(show.signif.stars=FALSE)
+lm1 <- lm(i1 ~ sub * age)
+lm2 <- lm(i1 ~ sub + age)
+anova(lm2, lm1)
+
+
+###################################################
+### chunk number 5: 
+###################################################
+summary(lm1)
+
+
+###################################################
+### chunk number 6: 
+###################################################
+names(summary(lm1))
+summary(lm1)$sigma
+
+
+###################################################
+### chunk number 7: 
+###################################################
+names(lm1)
+
+
+###################################################
+### chunk number 8: 
+###################################################
+lm1$coefficients
+coef(lm1)
+
+
+###################################################
+### chunk number 9: 
+###################################################
+vcov(lm1)
+
+
+###################################################
+### chunk number 10: 
+###################################################
+pred <- fitted(lm1)
+resid <- residuals(lm1)
+quantile(resid)
+
+
+###################################################
+### chunk number 11: 
+###################################################
+tmpds <- data.frame(id, age, i1, sub, pred, resid, rstandard(lm1))
+tmpds[resid==max(resid),]
+tmpds[resid==min(resid),]
+
+
+###################################################
+### chunk number 13: 
+###################################################
+oldpar <- par(mfrow=c(2, 2), mar=c(4, 4, 2, 2)+.1)
+plot(lm1)
+par(oldpar)
+
+
+###################################################
+### chunk number 15: 
+###################################################
+library(MASS)
+std.res <- rstandard(lm1)
+hist(std.res, breaks=seq(-2.5, 3.5, by=.5), main="", 
+   xlab="standardized residuals", col="gray80", freq=FALSE)
+lines(density(std.res), lwd=2)
+xvals <- seq(from=min(std.res), to=max(std.res), length=100)
+lines(xvals, dnorm(xvals, mean(std.res), sd(std.res)), lty=2)
+
+
+###################################################
+### chunk number 16: 
+###################################################
+uniquevals <- unique(substance)
+numunique <- length(uniquevals)
+formula <- as.formula(i1 ~ age)
+p <- length(coef(lm(formula)))
+res <- matrix(rep(0, numunique*p), p, numunique)
+for (i in 1:length(uniquevals)) {
+   res[,i] <- coef(lm(formula, subset=substance==uniquevals[i]))
+}
+rownames(res) <- c("intercept","slope")
+colnames(res) <- uniquevals
+res
+detach(newds)
+
+
+###################################################
+### chunk number 18: 
+###################################################
+attach(ds)
+sub <- as.factor(substance)
+genf <- as.factor(ifelse(female, "F", "M"))
+interaction.plot(sub, genf, cesd, xlab="substance", las=1, lwd=2)
+
+
+###################################################
+### chunk number 20: 
+###################################################
+subs <- character(length(substance))
+subs[substance=="alcohol"] <- "Alc"
+subs[substance=="cocaine"] <- "Coc"
+subs[substance=="heroin"] <- "Her"
+gen <- character(length(female))
+boxout <- boxplot(cesd ~ subs + genf, notch=TRUE, varwidth=TRUE, 
+   col="gray80")
+boxmeans <- tapply(cesd, list(subs, genf), mean)
+points(seq(boxout$n), boxmeans, pch=4, cex=2)
+
+
+###################################################
+### chunk number 21: 
+###################################################
+aov1 <- aov(cesd ~ sub * genf, data=ds)
+aov2 <- aov(cesd ~ sub + genf, data=ds)
+resid <- residuals(aov2)
+anova(aov2, aov1)
+
+
+###################################################
+### chunk number 22: 
+###################################################
+options(digits=6)
+logLik(aov1)
+logLik(aov2)
+lldiff <- logLik(aov1)[1] - logLik(aov2)[1]
+lldiff
+1 - pchisq(2*lldiff, 2)
+options(digits=3)
+
+
+###################################################
+### chunk number 23: 
+###################################################
+summary(aov2)
+
+
+###################################################
+### chunk number 24: 
+###################################################
+aov2
+
+
+###################################################
+### chunk number 25: 
+###################################################
+contrasts(sub) <- contr.SAS(3)
+aov3 <- lm(cesd ~ sub + genf, data=ds)
+summary(aov3)
+
+
+###################################################
+### chunk number 26: 
+###################################################
+AIC(aov1)
+AIC(aov2)
+
+
+###################################################
+### chunk number 27: 
+###################################################
+mult <- TukeyHSD(aov(cesd ~ sub, data=ds), "sub")
+mult
+
+
+###################################################
+### chunk number 29: hsdplot
+###################################################
+plot(mult)
+
+
+###################################################
+### chunk number 30: 
+###################################################
+library(gmodels)
+fit.contrast(aov2, "sub", c(1,-2,1), conf.int=0.95 )
+
+

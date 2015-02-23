@@ -1,0 +1,373 @@
+\documentclass{article}
+\usepackage[pdftex]{graphicx}
+\usepackage{rotating}
+\usepackage{amsmath}
+\usepackage{authblk}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{fullpage}
+\usepackage{Sweave}
+\usepackage{pdflscape}
+\usepackage{amsmath}   
+\usepackage{amssymb}
+\usepackage{wasysym}
+\usepackage{ctable}
+\newcommand{\fg}[3]{\begin{figure}[htbp]%
+        \leavevmode%
+        \centerline{\includegraphics{#1}}%
+        \caption{#3}%
+        \label{#2}%
+        \end{figure}}
+%\fgh{basefilename}{label}{caption}{short caption for TOC}
+\newcommand{\fgh}[4]{\begin{figure}[htbp]%
+        \leavevmode%
+        \centerline{\includegraphics{#1}}%
+        \caption[#4]{#3}%
+        \label{#2}%
+        \end{figure}}
+\begin{document} 
+\input{Project1-concordance}
+
+
+\title{Regression Results}
+%\author[1]{\small{Bruce Barber}}
+\author{\small{Meng Lu}}
+
+\affil{\footnotesize{GIDP Statistics \\ Email: menglu@email.arizona.edu}}
+%\affil[2]{\footnotesize{Department of Pediatric, The University of Arizona}}
+%\affil[2]{\footnotesize{Statistical Consulting Laboratory \\ email: zlu@arizona.edu}}
+
+\maketitle
+\section{Project1 Linear Regression Model 1}
+
+\begin{Schunk}
+\begin{Sinput}
+> #Input support_data.csv
+> mydata<-read.csv("/Users/mlu/Courses/CPH576C/Data/support_data.csv",sep=",")
+> pro1.data<-mydata[,c("age","sex","dzgroup","num.co","scoma","race","meanbp","hrt","temp","pafi","alb","totcst")]
+> pro1.data<-subset(pro1.data,totcst!=0)
+> pro2.data<-subset(pro1.data,!is.na(totcst))
+> attach(pro2.data)
+> pdf("/Users/mlu/Courses/CPH576C/Homework/Project1boxplot1.pdf")
+> layout(matrix(c(1,1,2,3),2,2,byrow=T))
+> boxplot(totcst~dzgroup,main="Boxplot of totcst and dzgroup",col="blue")
+> boxplot(totcst~sex,main="Boxplot of totcst and sex",col="lightgray")
+> boxplot(totcst~race,main="Boxplot of totcst and race",col="bisque")
+> dev.off()
+> require("gplots")
+> pdf("/Users/mlu/Courses/CPH576C/Homework/Project1plotmean1.pdf")
+> layout(matrix(c(1,1,2,3),2,2,byrow=T))
+> plotmeans(totcst~dzgroup,xlab="group", ylab="Total cost",main="Mean Plot\nwith 95% CI")
+> plotmeans(totcst~sex,xlab="Sex", ylab="Total cost",main="Mean Plot\nwith 95% CI")
+> plotmeans(totcst~race,xlab="Race", ylab="Total cost",main="Mean Plot\nwith 95% CI")
+> dev.off()
+> pdf("/Users/mlu/Courses/CPH576C/Homework/Project1boxplot2.pdf")
+> layout(matrix(c(1,1,2,3),2,2,byrow=T))
+> boxplot(log(totcst)~dzgroup,main="Boxplot of logtotcst and dzgroup",col="blue")
+> boxplot(log(totcst)~sex,main="Boxplot of logtotcst and sex",col="lightgray")
+> boxplot(log(totcst)~race,main="Boxplot of logtotcst and race",col="bisque")
+> dev.off()
+> pdf("/Users/mlu/Courses/CPH576C/Homework/Project1plotmean2.pdf")
+> layout(matrix(c(1,1,2,3),2,2,byrow=T))
+> plotmeans(log(totcst)~dzgroup,xlab="group", ylab="Total cost",main="Mean Plot\nwith 95% CI")
+> plotmeans(log(totcst)~sex,xlab="Sex", ylab="Total cost",main="Mean Plot\nwith 95% CI")
+> plotmeans(log(totcst)~race,xlab="Race", ylab="Total cost",main="Mean Plot\nwith 95% CI")
+> dev.off()
+> detach(pro2.data)
+> log.totcst<-log(pro2.data$totcst)
+> pro3.data<-cbind(pro2.data,log.totcst)
+> pdf("/Users/mlu/Courses/CPH576C/Homework/Project1histogram.pdf")
+> par(mfrow=c(1,2))
+> hist(pro2.data$totcst,xlab="Total Cost",col="red",main="Histogram of totcst");rug(jitter(pro2.data$totcst));lines(density(pro2.data$totcst), col="blue", lwd=2)
+> hist(pro3.data$log.totcst,xlab="Log Total Cost",col="red",main="Histogram of totcst");rug(jitter(pro3.data$log.totcst));lines(density(pro3.data$log.totcst), col="blue", lwd=2)
+> dev.off()
+> pro3.data$Scoma[pro3.data$scoma>=0 & pro3.data$scoma <=20]<-"Scomalow"
+> pro3.data$Scoma[pro3.data$scoma>=21 & pro3.data$scoma <=70]<-"Scomamedian"
+> pro3.data$Scoma[pro3.data$scoma>=71 & pro3.data$scoma <=100]<-"Scomahigh"
+> require("Hmisc")
+\end{Sinput}
+\end{Schunk}
+
+
+
+\begin{Schunk}
+\begin{Sinput}
+> projectlm1 <- lm(log.totcst~age+factor(sex)+factor(dzgroup)+num.co+factor(Scoma)+factor(race)+rcs(meanbp,4)+rcs(hrt,4)+rcs(temp,4)+pafi+alb,data=pro3.data)
+> summary(projectlm1)
+> pdf("/Users/mlu/Courses/CPH576C/Homework/Projectlm1diagonose.pdf")
+> par(mfrow=c(2,2))
+> plot(projectlm1)
+> dev.off()
+> require(xtable)
+> est.table1<-xtable(projectlm1,caption="Parameter Estimates from regression model",label="reg1",digits=c(0,2,2,2,4))
+> 
+> #
+\end{Sinput}
+\end{Schunk}
+
+
+
+\begin{Schunk}
+\begin{Sinput}
+> print(est.table1)
+\end{Sinput}
+% latex table generated in R 3.1.1 by xtable 1.7-3 package
+% Fri Sep 19 22:45:02 2014
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrrr}
+  \hline
+ & Estimate & Std. Error & t value & Pr($>$$|$t$|$) \\ 
+  \hline
+(Intercept) & 9.73 & 5.06 & 1.92 & 0.0553 \\ 
+  age & -0.00 & 0.00 & -1.72 & 0.0856 \\ 
+  factor(sex)male & -0.10 & 0.08 & -1.17 & 0.2426 \\ 
+  factor(dzgroup)CHF & -0.69 & 0.18 & -3.91 & 0.0001 \\ 
+  factor(dzgroup)Cirrhosis & -0.25 & 0.19 & -1.30 & 0.1942 \\ 
+  factor(dzgroup)Colon Cancer & -1.25 & 0.49 & -2.54 & 0.0113 \\ 
+  factor(dzgroup)Coma & -0.47 & 0.23 & -2.08 & 0.0383 \\ 
+  factor(dzgroup)COPD & -0.68 & 0.15 & -4.59 & 0.0000 \\ 
+  factor(dzgroup)Lung Cancer & -0.81 & 0.23 & -3.50 & 0.0005 \\ 
+  factor(dzgroup)MOSF w/Malig & -0.10 & 0.14 & -0.67 & 0.5021 \\ 
+  num.co & -0.05 & 0.03 & -1.60 & 0.1106 \\ 
+  factor(Scoma)Scomalow & -0.05 & 0.23 & -0.21 & 0.8361 \\ 
+  factor(Scoma)Scomamedian & 0.47 & 0.24 & 1.94 & 0.0532 \\ 
+  factor(race)asian & -0.04 & 0.99 & -0.04 & 0.9697 \\ 
+  factor(race)black & -0.09 & 0.85 & -0.10 & 0.9172 \\ 
+  factor(race)hispanic & -0.32 & 0.89 & -0.36 & 0.7172 \\ 
+  factor(race)other & 0.88 & 0.93 & 0.94 & 0.3464 \\ 
+  factor(race)white & 0.10 & 0.85 & 0.12 & 0.9033 \\ 
+  rcs(meanbp, 4)meanbp & 0.01 & 0.01 & 1.52 & 0.1293 \\ 
+  rcs(meanbp, 4)meanbp' & -0.06 & 0.02 & -2.74 & 0.0064 \\ 
+  rcs(meanbp, 4)meanbp'' & 0.16 & 0.05 & 3.18 & 0.0016 \\ 
+  rcs(hrt, 4)hrt & 0.01 & 0.00 & 1.44 & 0.1504 \\ 
+  rcs(hrt, 4)hrt' & -0.01 & 0.02 & -0.31 & 0.7547 \\ 
+  rcs(hrt, 4)hrt'' & 0.00 & 0.04 & 0.01 & 0.9944 \\ 
+  rcs(temp, 4)temp & 0.02 & 0.14 & 0.13 & 0.8935 \\ 
+  rcs(temp, 4)temp' & 0.73 & 0.69 & 1.06 & 0.2879 \\ 
+  rcs(temp, 4)temp'' & -1.62 & 1.44 & -1.12 & 0.2620 \\ 
+  pafi & -0.00 & 0.00 & -3.91 & 0.0001 \\ 
+  alb & -0.28 & 0.06 & -4.43 & 0.0000 \\ 
+   \hline
+\end{tabular}
+\caption{Parameter Estimates from regression model} 
+\label{reg1}
+\end{table}\begin{Sinput}
+> #print(cor.result)
+> 
+> #latex(out.summary[,-1],file = "", n.rgroup = c(2,2,2,2), rowname=out.summary[,1],rgroup = c("MSPSS","PSS","DUSOCS-Family","DUSOCS-Non-Family"), rgroupTexCmd = "bfseries",numeric.dollar = FALSE, title = "", ctable = TRUE, label = "tab:out", caption = "Estimated  effects from regression model ",here=TRUE)
+> 
+> #latex(med.fit.summary,file = "", n.rgroup = c(3,3,3,3), rowname=rep(c("Indirect Effect","Direct Effect","Total effect"),4),rgroup = c("MSPSS","PSS","DUSOCS-Family","DUSOCS-Non-Family"), rgroupTexCmd = "bfseries",numeric.dollar = FALSE, title = "", ctable = TRUE, label = "tab:med", caption = "Estimated  effects from individual mediator models. ",here=TRUE)
+> 
+> 
+> #latex(round(est.table[,-c(1:2)],digits=2),file = "", n.rgroup = c(5,1,1,1,1), rowname=est.table[,2],rgroup = c("Total FQOL","MSPSS","PSS","DUSOCS-Family","DUSOCS-Non-Family"), rgroupTexCmd = "bfseries",numeric.dollar = FALSE, title = "", ctable = TRUE, label = "tab:multi", caption = "Estimated  effects from multiple mediator models. ",here=TRUE)
+\end{Sinput}
+\end{Schunk}
+Multiple R-squared:  0.482,	Adjusted R-squared:  0.445 
+ 
+ \begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Projectlm1diagonose.pdf}
+     \caption{Diagonose Plot }
+     \end{center}
+     \end{figure}
+\section{Project1 Linear Regression Model 3}
+\begin{Schunk}
+\begin{Sinput}
+> projectlm3 <- lm(log.totcst~age+factor(sex)+age:factor(dzgroup)+factor(dzgroup)+num.co+factor(Scoma)+factor(race)+rcs(meanbp,4)+rcs(hrt,4)+rcs(temp,3)+pafi+alb,data=pro3.data)
+> summary(projectlm3)
+> pdf("/Users/mlu/Courses/CPH576C/Homework/Projectlm3diagonose.pdf")
+> par(mfrow=c(2,2))
+> plot(projectlm3)
+> dev.off()
+> require(xtable)
+> est.table2<-xtable(projectlm3,caption="Parameter Estimates from regression model",label="reg2",digits=c(0,2,2,2,4))
+\end{Sinput}
+\end{Schunk}
+\begin{Schunk}
+\begin{Sinput}
+> print(est.table2)
+\end{Sinput}
+% latex table generated in R 3.1.1 by xtable 1.7-3 package
+% Fri Sep 19 22:45:02 2014
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrrr}
+  \hline
+ & Estimate & Std. Error & t value & Pr($>$$|$t$|$) \\ 
+  \hline
+(Intercept) & 6.30 & 3.68 & 1.71 & 0.0882 \\ 
+  age & -0.00 & 0.00 & -0.86 & 0.3930 \\ 
+  factor(sex)male & -0.10 & 0.09 & -1.11 & 0.2669 \\ 
+  factor(dzgroup)CHF & -0.72 & 0.63 & -1.14 & 0.2553 \\ 
+  factor(dzgroup)Cirrhosis & -0.59 & 0.83 & -0.70 & 0.4818 \\ 
+  factor(dzgroup)Colon Cancer & 6.46 & 10.19 & 0.63 & 0.5266 \\ 
+  factor(dzgroup)Coma & -1.07 & 0.64 & -1.67 & 0.0965 \\ 
+  factor(dzgroup)COPD & -0.34 & 0.71 & -0.47 & 0.6352 \\ 
+  factor(dzgroup)Lung Cancer & -0.37 & 1.06 & -0.35 & 0.7258 \\ 
+  factor(dzgroup)MOSF w/Malig & 1.28 & 0.52 & 2.48 & 0.0134 \\ 
+  num.co & -0.05 & 0.03 & -1.62 & 0.1057 \\ 
+  factor(Scoma)Scomalow & -0.03 & 0.23 & -0.14 & 0.8886 \\ 
+  factor(Scoma)Scomamedian & 0.52 & 0.24 & 2.11 & 0.0357 \\ 
+  factor(race)asian & -0.14 & 0.98 & -0.15 & 0.8839 \\ 
+  factor(race)black & -0.16 & 0.85 & -0.19 & 0.8463 \\ 
+  factor(race)hispanic & -0.34 & 0.88 & -0.39 & 0.6963 \\ 
+  factor(race)other & 0.75 & 0.93 & 0.81 & 0.4198 \\ 
+  factor(race)white & 0.01 & 0.84 & 0.02 & 0.9873 \\ 
+  rcs(meanbp, 4)meanbp & 0.01 & 0.01 & 1.19 & 0.2337 \\ 
+  rcs(meanbp, 4)meanbp' & -0.06 & 0.02 & -2.65 & 0.0084 \\ 
+  rcs(meanbp, 4)meanbp'' & 0.16 & 0.05 & 3.18 & 0.0016 \\ 
+  rcs(hrt, 4)hrt & 0.01 & 0.00 & 1.48 & 0.1396 \\ 
+  rcs(hrt, 4)hrt' & -0.01 & 0.02 & -0.34 & 0.7346 \\ 
+  rcs(hrt, 4)hrt'' & 0.00 & 0.04 & 0.03 & 0.9747 \\ 
+  rcs(temp, 3)temp & 0.12 & 0.10 & 1.21 & 0.2286 \\ 
+  rcs(temp, 3)temp' & -0.01 & 0.17 & -0.09 & 0.9317 \\ 
+  pafi & -0.00 & 0.00 & -3.92 & 0.0001 \\ 
+  alb & -0.28 & 0.06 & -4.42 & 0.0000 \\ 
+  age:factor(dzgroup)CHF & 0.00 & 0.01 & 0.02 & 0.9874 \\ 
+  age:factor(dzgroup)Cirrhosis & 0.01 & 0.02 & 0.43 & 0.6663 \\ 
+  age:factor(dzgroup)Colon Cancer & -0.11 & 0.14 & -0.76 & 0.4493 \\ 
+  age:factor(dzgroup)Coma & 0.01 & 0.01 & 1.05 & 0.2964 \\ 
+  age:factor(dzgroup)COPD & -0.00 & 0.01 & -0.50 & 0.6142 \\ 
+  age:factor(dzgroup)Lung Cancer & -0.01 & 0.02 & -0.43 & 0.6684 \\ 
+  age:factor(dzgroup)MOSF w/Malig & -0.02 & 0.01 & -2.83 & 0.0048 \\ 
+   \hline
+\end{tabular}
+\caption{Parameter Estimates from regression model} 
+\label{reg2}
+\end{table}\end{Schunk}
+     
+     \begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Projectlm3diagonose.pdf}
+     \caption{Diagonose Plot }
+     \end{center}
+     \end{figure}
+
+
+       
+      
+
+
+
+
+         
+\section{Deleting Outliers and influence and rebuild the model}
+\begin{Schunk}
+\begin{Sinput}
+> pro4.data <-pro3.data[-c(253,697),]
+> projectlm4 <- lm(log.totcst~age+factor(sex)+age:factor(dzgroup)+factor(dzgroup)+num.co+factor(Scoma)+factor(race)+rcs(meanbp,4)+rcs(hrt,4)+rcs(temp,3)+pafi+alb,data=pro4.data)
+> summary(projectlm4)
+> pdf("/Users/mlu/Courses/CPH576C/Homework/Projectlm4diagonose.pdf")
+> par(mfrow=c(2,2))
+> plot(projectlm4)
+> dev.off()
+> require(xtable)
+> est.table3<-xtable(projectlm4,caption="Parameter Estimates from regression model",label="reg1",digits=c(0,2,2,2,4))
+\end{Sinput}
+\end{Schunk}
+
+\begin{Schunk}
+\begin{Sinput}
+> print(est.table3)
+\end{Sinput}
+% latex table generated in R 3.1.1 by xtable 1.7-3 package
+% Fri Sep 19 22:45:02 2014
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrrr}
+  \hline
+ & Estimate & Std. Error & t value & Pr($>$$|$t$|$) \\ 
+  \hline
+(Intercept) & 6.38 & 3.69 & 1.73 & 0.0845 \\ 
+  age & -0.00 & 0.00 & -0.92 & 0.3582 \\ 
+  factor(sex)male & -0.09 & 0.09 & -1.10 & 0.2725 \\ 
+  factor(dzgroup)CHF & -0.74 & 0.63 & -1.16 & 0.2466 \\ 
+  factor(dzgroup)Cirrhosis & -0.60 & 0.83 & -0.72 & 0.4739 \\ 
+  factor(dzgroup)Colon Cancer & 6.45 & 10.20 & 0.63 & 0.5278 \\ 
+  factor(dzgroup)Coma & -1.09 & 0.65 & -1.68 & 0.0930 \\ 
+  factor(dzgroup)COPD & -0.36 & 0.71 & -0.50 & 0.6181 \\ 
+  factor(dzgroup)Lung Cancer & -0.39 & 1.06 & -0.37 & 0.7129 \\ 
+  factor(dzgroup)MOSF w/Malig & 1.26 & 0.52 & 2.44 & 0.0153 \\ 
+  num.co & -0.05 & 0.03 & -1.63 & 0.1042 \\ 
+  factor(Scoma)Scomalow & -0.03 & 0.23 & -0.14 & 0.8894 \\ 
+  factor(Scoma)Scomamedian & 0.51 & 0.25 & 2.09 & 0.0369 \\ 
+  factor(race)asian & -0.13 & 0.98 & -0.14 & 0.8926 \\ 
+  factor(race)black & -0.16 & 0.85 & -0.19 & 0.8521 \\ 
+  factor(race)hispanic & -0.34 & 0.88 & -0.39 & 0.6989 \\ 
+  factor(race)other & 0.76 & 0.93 & 0.82 & 0.4139 \\ 
+  factor(race)white & 0.02 & 0.84 & 0.03 & 0.9800 \\ 
+  rcs(meanbp, 4)meanbp & 0.01 & 0.01 & 1.22 & 0.2244 \\ 
+  rcs(meanbp, 4)meanbp' & -0.06 & 0.02 & -2.67 & 0.0079 \\ 
+  rcs(meanbp, 4)meanbp'' & 0.16 & 0.05 & 3.20 & 0.0015 \\ 
+  rcs(hrt, 4)hrt & 0.01 & 0.00 & 1.47 & 0.1420 \\ 
+  rcs(hrt, 4)hrt' & -0.01 & 0.02 & -0.33 & 0.7423 \\ 
+  rcs(hrt, 4)hrt'' & 0.00 & 0.04 & 0.02 & 0.9849 \\ 
+  rcs(temp, 3)temp & 0.12 & 0.10 & 1.18 & 0.2377 \\ 
+  rcs(temp, 3)temp' & -0.01 & 0.17 & -0.05 & 0.9623 \\ 
+  pafi & -0.00 & 0.00 & -3.94 & 0.0001 \\ 
+  alb & -0.28 & 0.06 & -4.43 & 0.0000 \\ 
+  age:factor(dzgroup)CHF & 0.00 & 0.01 & 0.04 & 0.9680 \\ 
+  age:factor(dzgroup)Cirrhosis & 0.01 & 0.02 & 0.44 & 0.6599 \\ 
+  age:factor(dzgroup)Colon Cancer & -0.11 & 0.14 & -0.76 & 0.4505 \\ 
+  age:factor(dzgroup)Coma & 0.01 & 0.01 & 1.06 & 0.2895 \\ 
+  age:factor(dzgroup)COPD & -0.00 & 0.01 & -0.48 & 0.6348 \\ 
+  age:factor(dzgroup)Lung Cancer & -0.01 & 0.02 & -0.41 & 0.6807 \\ 
+  age:factor(dzgroup)MOSF w/Malig & -0.02 & 0.01 & -2.80 & 0.0054 \\ 
+   \hline
+\end{tabular}
+\caption{Parameter Estimates from regression model} 
+\label{reg1}
+\end{table}\end{Schunk}
+          
+           \begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=3in,width=3in]{/Users/mlu/Courses/CPH576C/Homework/Projectlm4diagonose.pdf}
+     \caption{Crime rate}
+     \end{center}
+     \end{figure}
+      
+     
+     
+     
+\section{Figures}
+\begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Project1boxplot1.pdf}
+     \caption{Boxplot1}
+     \end{center}
+     \end{figure}
+     
+     
+   \begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Project1plotmean1.pdf}
+     \caption{Mean Plot 1}
+     \end{center}
+     \end{figure}  
+     
+     
+\begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Project1boxplot2.pdf}
+     \caption{BoxPlot2 }
+     \end{center}
+     \end{figure}
+
+
+\begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Project1plotmean2.pdf}
+     \caption{Mean Plot 2}
+     \end{center}
+     \end{figure}
+     
+\begin{figure}[htb]
+  \begin{center}
+    \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Project1histogram.pdf}
+    \caption{Histogram}
+    \end{center}
+    \end{figure}
+
+              
+ \end{document}

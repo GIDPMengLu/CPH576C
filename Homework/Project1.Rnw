@@ -1,0 +1,222 @@
+\documentclass{article}
+\usepackage[pdftex]{graphicx}
+\usepackage{rotating}
+\usepackage{amsmath}
+\usepackage{authblk}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{fullpage}
+\usepackage{Sweave}
+\usepackage{pdflscape}
+\usepackage{amsmath}   
+\usepackage{amssymb}
+\usepackage{wasysym}
+\usepackage{ctable}
+\newcommand{\fg}[3]{\begin{figure}[htbp]%
+        \leavevmode%
+        \centerline{\includegraphics{#1}}%
+        \caption{#3}%
+        \label{#2}%
+        \end{figure}}
+%\fgh{basefilename}{label}{caption}{short caption for TOC}
+\newcommand{\fgh}[4]{\begin{figure}[htbp]%
+        \leavevmode%
+        \centerline{\includegraphics{#1}}%
+        \caption[#4]{#3}%
+        \label{#2}%
+        \end{figure}}
+\begin{document} 
+\SweaveOpts{concordance=TRUE}
+\SweaveOpts{fig=FALSE, results=hide, echo=TRUE}
+
+\title{Regression Results}
+%\author[1]{\small{Bruce Barber}}
+\author{\small{Meng Lu}}
+
+\affil{\footnotesize{GIDP Statistics \\ Email: menglu@email.arizona.edu}}
+%\affil[2]{\footnotesize{Department of Pediatric, The University of Arizona}}
+%\affil[2]{\footnotesize{Statistical Consulting Laboratory \\ email: zlu@arizona.edu}}
+
+\maketitle
+\section{Project1 Linear Regression Model 1}
+
+<<label=prob2, echo=T,eval=T>>=
+#Input support_data.csv
+mydata<-read.csv("/Users/mlu/Courses/CPH576C/Data/support_data.csv",sep=",")
+pro1.data<-mydata[,c("age","sex","dzgroup","num.co","scoma","race","meanbp","hrt","temp","pafi","alb","totcst")]
+pro1.data<-subset(pro1.data,totcst!=0)
+pro2.data<-subset(pro1.data,!is.na(totcst))
+attach(pro2.data)
+pdf("/Users/mlu/Courses/CPH576C/Homework/Project1boxplot1.pdf")
+layout(matrix(c(1,1,2,3),2,2,byrow=T))
+boxplot(totcst~dzgroup,main="Boxplot of totcst and dzgroup",col="blue")
+boxplot(totcst~sex,main="Boxplot of totcst and sex",col="lightgray")
+boxplot(totcst~race,main="Boxplot of totcst and race",col="bisque")
+dev.off()
+require("gplots")
+pdf("/Users/mlu/Courses/CPH576C/Homework/Project1plotmean1.pdf")
+layout(matrix(c(1,1,2,3),2,2,byrow=T))
+plotmeans(totcst~dzgroup,xlab="group", ylab="Total cost",main="Mean Plot\nwith 95% CI")
+plotmeans(totcst~sex,xlab="Sex", ylab="Total cost",main="Mean Plot\nwith 95% CI")
+plotmeans(totcst~race,xlab="Race", ylab="Total cost",main="Mean Plot\nwith 95% CI")
+dev.off()
+pdf("/Users/mlu/Courses/CPH576C/Homework/Project1boxplot2.pdf")
+layout(matrix(c(1,1,2,3),2,2,byrow=T))
+boxplot(log(totcst)~dzgroup,main="Boxplot of logtotcst and dzgroup",col="blue")
+boxplot(log(totcst)~sex,main="Boxplot of logtotcst and sex",col="lightgray")
+boxplot(log(totcst)~race,main="Boxplot of logtotcst and race",col="bisque")
+dev.off()
+pdf("/Users/mlu/Courses/CPH576C/Homework/Project1plotmean2.pdf")
+layout(matrix(c(1,1,2,3),2,2,byrow=T))
+plotmeans(log(totcst)~dzgroup,xlab="group", ylab="Total cost",main="Mean Plot\nwith 95% CI")
+plotmeans(log(totcst)~sex,xlab="Sex", ylab="Total cost",main="Mean Plot\nwith 95% CI")
+plotmeans(log(totcst)~race,xlab="Race", ylab="Total cost",main="Mean Plot\nwith 95% CI")
+dev.off()
+detach(pro2.data)
+log.totcst<-log(pro2.data$totcst)
+pro3.data<-cbind(pro2.data,log.totcst)
+pdf("/Users/mlu/Courses/CPH576C/Homework/Project1histogram.pdf")
+par(mfrow=c(1,2))
+hist(pro2.data$totcst,xlab="Total Cost",col="red",main="Histogram of totcst");rug(jitter(pro2.data$totcst));lines(density(pro2.data$totcst), col="blue", lwd=2)
+hist(pro3.data$log.totcst,xlab="Log Total Cost",col="red",main="Histogram of totcst");rug(jitter(pro3.data$log.totcst));lines(density(pro3.data$log.totcst), col="blue", lwd=2)
+dev.off()
+pro3.data$Scoma[pro3.data$scoma>=0 & pro3.data$scoma <=20]<-"Scomalow"
+pro3.data$Scoma[pro3.data$scoma>=21 & pro3.data$scoma <=70]<-"Scomamedian"
+pro3.data$Scoma[pro3.data$scoma>=71 & pro3.data$scoma <=100]<-"Scomahigh"
+require("Hmisc")
+@ 
+
+
+
+<<label=prob2, echo=T,eval=T>>=
+projectlm1 <- lm(log.totcst~age+factor(sex)+factor(dzgroup)+num.co+factor(Scoma)+factor(race)+rcs(meanbp,4)+rcs(hrt,4)+rcs(temp,4)+pafi+alb,data=pro3.data)
+summary(projectlm1)
+pdf("/Users/mlu/Courses/CPH576C/Homework/Projectlm1diagonose.pdf")
+par(mfrow=c(2,2))
+plot(projectlm1)
+dev.off()
+require(xtable)
+est.table1<-xtable(projectlm1,caption="Parameter Estimates from regression model",label="reg1",digits=c(0,2,2,2,4))
+
+#
+@ 
+
+
+
+<<label=pcaana,results=tex,echo=T,eval=T>>=
+print(est.table1)
+#print(cor.result)
+
+#latex(out.summary[,-1],file = "", n.rgroup = c(2,2,2,2), rowname=out.summary[,1],rgroup = c("MSPSS","PSS","DUSOCS-Family","DUSOCS-Non-Family"), rgroupTexCmd = "bfseries",numeric.dollar = FALSE, title = "", ctable = TRUE, label = "tab:out", caption = "Estimated  effects from regression model ",here=TRUE)
+
+#latex(med.fit.summary,file = "", n.rgroup = c(3,3,3,3), rowname=rep(c("Indirect Effect","Direct Effect","Total effect"),4),rgroup = c("MSPSS","PSS","DUSOCS-Family","DUSOCS-Non-Family"), rgroupTexCmd = "bfseries",numeric.dollar = FALSE, title = "", ctable = TRUE, label = "tab:med", caption = "Estimated  effects from individual mediator models. ",here=TRUE)
+
+
+#latex(round(est.table[,-c(1:2)],digits=2),file = "", n.rgroup = c(5,1,1,1,1), rowname=est.table[,2],rgroup = c("Total FQOL","MSPSS","PSS","DUSOCS-Family","DUSOCS-Non-Family"), rgroupTexCmd = "bfseries",numeric.dollar = FALSE, title = "", ctable = TRUE, label = "tab:multi", caption = "Estimated  effects from multiple mediator models. ",here=TRUE)
+@ 
+Multiple R-squared:  0.482,	Adjusted R-squared:  0.445 
+ 
+ \begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Projectlm1diagonose.pdf}
+     \caption{Diagonose Plot }
+     \end{center}
+     \end{figure}
+\section{Project1 Linear Regression Model 3}
+<<label=prob3, echo=T,eval=T>>=
+projectlm3 <- lm(log.totcst~age+factor(sex)+age:factor(dzgroup)+factor(dzgroup)+num.co+factor(Scoma)+factor(race)+rcs(meanbp,4)+rcs(hrt,4)+rcs(temp,3)+pafi+alb,data=pro3.data)
+summary(projectlm3)
+pdf("/Users/mlu/Courses/CPH576C/Homework/Projectlm3diagonose.pdf")
+par(mfrow=c(2,2))
+plot(projectlm3)
+dev.off()
+require(xtable)
+est.table2<-xtable(projectlm3,caption="Parameter Estimates from regression model",label="reg2",digits=c(0,2,2,2,4))
+@ 
+<<label=pca,results=tex,echo=T,eval=T>>=
+print(est.table2)
+@ 
+     
+     \begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Projectlm3diagonose.pdf}
+     \caption{Diagonose Plot }
+     \end{center}
+     \end{figure}
+
+
+       
+      
+
+
+
+
+         
+\section{Deleting Outliers and influence and rebuild the model}
+<<label=prob2, echo=T,eval=T>>=
+pro4.data <-pro3.data[-c(253,697),]
+projectlm4 <- lm(log.totcst~age+factor(sex)+age:factor(dzgroup)+factor(dzgroup)+num.co+factor(Scoma)+factor(race)+rcs(meanbp,4)+rcs(hrt,4)+rcs(temp,3)+pafi+alb,data=pro4.data)
+summary(projectlm4)
+pdf("/Users/mlu/Courses/CPH576C/Homework/Projectlm4diagonose.pdf")
+par(mfrow=c(2,2))
+plot(projectlm4)
+dev.off()
+require(xtable)
+est.table3<-xtable(projectlm4,caption="Parameter Estimates from regression model",label="reg1",digits=c(0,2,2,2,4))
+@ 
+
+<<label=pcaana,results=tex,echo=T,eval=T>>=
+print(est.table3)
+@
+          
+           \begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=3in,width=3in]{/Users/mlu/Courses/CPH576C/Homework/Projectlm4diagonose.pdf}
+     \caption{Crime rate}
+     \end{center}
+     \end{figure}
+      
+     
+     
+     
+\section{Figures}
+\begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Project1boxplot1.pdf}
+     \caption{Boxplot1}
+     \end{center}
+     \end{figure}
+     
+     
+   \begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Project1plotmean1.pdf}
+     \caption{Mean Plot 1}
+     \end{center}
+     \end{figure}  
+     
+     
+\begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Project1boxplot2.pdf}
+     \caption{BoxPlot2 }
+     \end{center}
+     \end{figure}
+
+
+\begin{figure}[htb]
+     \begin{center}
+     \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Project1plotmean2.pdf}
+     \caption{Mean Plot 2}
+     \end{center}
+     \end{figure}
+     
+\begin{figure}[htb]
+  \begin{center}
+    \includegraphics[height=6in,width=6in]{/Users/mlu/Courses/CPH576C/Homework/Project1histogram.pdf}
+    \caption{Histogram}
+    \end{center}
+    \end{figure}
+
+              
+ \end{document}

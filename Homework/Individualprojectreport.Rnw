@@ -1,0 +1,909 @@
+
+\documentclass{article}
+\usepackage[pdftex]{graphicx}
+\usepackage{rotating}
+\usepackage{amsmath}
+\usepackage{authblk}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{fullpage}
+\usepackage{Sweave}
+\usepackage{pdflscape}
+\usepackage{amsmath}   
+\usepackage{amssymb}
+\usepackage{wasysym}
+\usepackage{ctable}
+\newcommand{\fg}[3]{\begin{figure}[htbp]%
+        \leavevmode%
+        \centerline{\includegraphics{#1}}%
+        \caption{#3}%
+        \label{#2}%
+        \end{figure}}
+%\fgh{basefilename}{label}{caption}{short caption for TOC}
+\newcommand{\fgh}[4]{\begin{figure}[htbp]%
+        \leavevmode%
+        \centerline{\includegraphics{#1}}%
+        \caption[#4]{#3}%
+        \label{#2}%
+        \end{figure}}
+\begin{document} 
+\SweaveOpts{concordance=TRUE}
+\SweaveOpts{fig=FALSE, results=hide, echo=TRUE}
+
+\title{STAT571A Homework 1}
+%\author[1]{\small{Bruce Barber}}
+\author{\small{Meng Lu}}
+
+\affil{\footnotesize{GIDP Statistics \\ Email: menglu@email.arizona.edu}}
+%\affil[2]{\footnotesize{Department of Pediatric, The University of Arizona}}
+%\affil[2]{\footnotesize{Statistical Consulting Laboratory \\ email: zlu@arizona.edu}}
+
+\maketitle
+<<label=PR7, echo=F,eval=T>>=
+#Input help data frame
+mydata <- read.table("/Users/mlu/Courses/CPH576C/Data/help_data.csv",header=T,sep=",")
+#head(mydata)
+
+attach(mydata)
+mydata$facage[age>=19 & age<=30]<-"young"
+mydata$facage[age>30 & age<=40]<-"middleage"
+mydata$facage[age>40 & age<=60]<-"old"
+detach(mydata)
+#############################################################
+##########################Summary statistics####################
+#############################################################
+#Five number summary and the missing values
+require(fields);stats(mydata)
+
+#Contingencey Table
+#Case-control study
+#Sensitivity and specificity
+xtres1 <- xtabs(~homeless+treat,data=mydata)
+xtres2 <- xtabs(~substance+treat,data=mydata)
+xtres3 <- xtabs(~homeless+substance+treat,data=mydata)
+ftable.xtres3 <- ftable(xtres3)
+
+#The Writing Wald.ci() function to calculate odds ratio, difference of proportions and relative risk
+Wald.ci <- function(Table,aff.response,alpha=0.05)
+    {
+        #Given two-sided Wald CI's for odds ratio, difference in proportions and relative risk.
+        #Table is a 2 by 2 table of counts with rows giving the treatment populations
+        #aff.response is a string like "c(1,1)"
+        #giving the cell of the beneficial response and the treatment category
+        #alpha is significance level
+        pow <- function(x,a=-1) x^a;z.alpha <- qnorm(1-alpha/2)
+        if(is.character(aff.response))
+            where <- eval(parse(text=aff.response))
+        else where <- aff.response
+        Next <- as.numeric(where==1)+1
+        
+        #OR
+        odds.ratio <- Table[where[1],where[2]]*Table[Next[1],Next[2]]/
+            (Table[where[1],Next[2]]*Table[Next[1],where[2]])
+        se.OR <- sqrt(sum(pow(Table)));ci.OR <- exp(log(odds.ratio)+c(-1,1)*z.alpha*se.OR)
+        
+        #Difference of proportions
+        p1 <-Table[where[1],where[2]]/(n1<-Table[where[1],Next[2]] + Table[where[1],where[2]])
+        p2<-Table[Next[1],where[2]]/(n2<-Table[Next[1],where[2]]+Table[Next[1],Next[2]])
+        se.diff <- sqrt(pi*(1-p1)/n1+p2*(1-p2)/n2)
+        ci.diff <- (p1-p2)+c(-1,1)*z.alpha*se.diff
+        
+        #Relative Risk
+        RR <- p1/p2;se.RR <- sqrt((1-p1)/(p1*n1)+(1-p2)/(p2*n2))
+        ci.RR <- exp(log(RR)+c(-1,1)*z.alpha*se.RR)
+        
+        list(OR=list(odds.ratio=odds.ratio, CI=ci.OR), 
+             proportion.difference=list(diff=p1-p2,CI=ci.diff), 
+             relative.risk=list(relative.risk=RR,CI=ci.RR))
+    }
+Wald.ci.test1 <- Wald.ci(xtres1,"c(1,1)")
+#Wald.ci.test2 <- Wald.ci(xtres1,"c(1,1)")
+#Wald.ci.test3 <- Wald.ci(xtres1[,,3],"c(1,1)")
+Wald.ci.test4 <- Wald.ci(xtres2,"c(1,1)")
+#Wald.ci.test5 <- Wald.ci(xtres2[,,2],"c(1,1)");Wald.ci.test6 <- Wald.ci(xtres2[,,3],"c(1,1)")
+Wald.ci.test7 <- Wald.ci(xtres3[,,1],"c(1,1)");Wald.ci.test8 <- Wald.ci(xtres3[,,2],"c(1,1)")
+
+
+
+#Cochran–Mantel–Haenszel chi-square test
+mantelhaen1 <- mantelhaen.test(xtres1)
+mantelhaen2 <- mantelhaen.test(xtres2)
+mantelhaen3 <- mantelhaen.test(xtres3)
+
+
+#Measures of association
+require(vcd)
+asso1 <- assocstats(xtres1)
+#asso2 <- assocstats(xtres1[,,2])
+#asso3 <- assocstats(xtres1[,,3])
+asso4 <- assocstats(xtres2)
+#asso5 <- assocstats(xtres2[,,2])
+#asso6 <- assocstats(xtres2[,,3])
+asso7 <- assocstats(xtres3[,,1])
+asso8 <- assocstats(xtres3[,,2])
+xtabxtres1 <- chisq.test(xtres1)
+#xtabxtres2 <- chisq.test(xtres1[,,2])
+#xtabxtres3 <- chisq.test(xtres1[,,3])
+xtabxtres4 <- chisq.test(xtres2)
+#xtabxtres5 <- chisq.test(xtres2[,,2])
+#xtabxtres6 <- chisq.test(xtres2[,,3])
+xtabxtres7 <- chisq.test(xtres3[,,1])
+xtabxtres8 <- chisq.test(xtres3[,,2])
+#Converting the numeric variables to factor variables
+help.data <- mydata[,c("id","e2b","e2b1","e2b2","e2b3","e2b4","i1","i11","i12","i13","i14","mcs","mcs1","mcs2","mcs3","mcs4","sexrisk","sexrisk1","sexrisk2","sexrisk3","sexrisk4","d1","age","substance","racegrp","cesd","cesd1","cesd2","cesd3","cesd4")]
+help.data <- subset(mydata,select=-c(anysubstatus,drinkstatus,female,g1b,g1b1,g1b2,g1b3,g1b4,homeless,linkstatus,satreat,treat,drinkstatus))
+attach(mydata)
+anysubstatus<- as.factor(anysubstatus);drinkstatus <- as.factor(drinkstatus)
+female <- as.factor(female);g1b <- as.factor(g1b)
+g1b1 <- as.factor(g1b1);g1b2 <- as.factor(g1b2)
+g1b3 <- as.factor(g1b3);g1b4 <- as.factor(g1b4)
+homeless <- as.factor(homeless);linkstatus <- as.factor(linkstatus)
+satreat <- as.factor(satreat);treat <- as.factor(treat)
+detach(mydata)
+help.data <- cbind(help.data,anysubstatus,drinkstatus,female,g1b,g1b1,g1b2,g1b3,g1b4,homeless,linkstatus,satreat,treat)
+
+
+
+
+
+#Display patterns of missing variables in a given data frame
+require(mice);newdata <- help.data[1:386,]
+missing.pattern <- md.pattern(help.data)
+
+
+
+#Dealing with missing data by using multiple imputation method
+#Because the multiple imputation method is randomized, I set the seed to conform the same results
+imp1 <-mice(newdata,m=5,maxit=10,seed=23109,
+           method=c(rep("pmm",74),rep("polyreg",2),rep("logreg",12)))
+summary(imp1)
+#Geting the complete data frame, there is no missing data any more.
+complete.data1 <- complete(imp1)
+
+
+
+
+
+#I need to use Principle component analysis, so I convert factor variables to numeric variables
+help.data <- subset(complete.data1,select=-c(anysubstatus,g1b,g1b1,g1b2,g1b3,g1b4,linkstatus,satreat,drinkstatus))
+anysubstatus<- as.numeric(complete.data1$anysubstatus)
+drinkstatus <- as.numeric(complete.data1$drinkstatus)
+g1b <- as.numeric(complete.data1$g1b)
+g1b1 <- as.numeric(complete.data1$g1b1)
+g1b2 <- as.numeric(complete.data1$g1b2)
+g1b3 <- as.numeric(complete.data1$g1b3)
+g1b4 <- as.numeric(complete.data1$g1b4)
+linkstatus <- as.numeric(complete.data1$linkstatus)
+satreat <- as.numeric(complete.data1$satreat)
+subset.data1 <- data.frame(anysubstatus,drinkstatus,g1b,g1b1,g1b2,g1b3,g1b4,linkstatus,satreat)
+subset.data2 <- cbind(help.data,subset.data1)
+#Converting from wide form to long form
+long.data1 <- reshape(subset.data2 ,idvar=c("id","treat"),varying=list(c("cesd","cesd1","cesd2","cesd3","cesd4"),c("mcs","mcs1","mcs2","mcs3","mcs4"),c("i1","i11","i12","i13","i14"),c("g1b","g1b1","g1b2","g1b3","g1b4"),c("e2b","e2b1","e2b2","e2b3","e2b4"),c("pcs","pcs1","pcs2","pcs3","pcs4"),c("indtot","indtot1","indtot2","indtot3","indtot4"),c("drugrisk","drugrisk1","drugrisk2","drugrisk3","drugrisk4"),c("sexrisk","sexrisk1","sexrisk2","sexrisk3","sexrisk4")),v.names=c("cesdtv","mcstv","i1tv","g1btv","e2btv","pcstv","indtottv","drugrisktv","sexrisktv"),timevar="time",times=0:4,direction="long")
+PCA.data <- subset(long.data1,select=-c(age,pcrec1,pcrec2,pcrec3,pcrec4,e2btv,id,homeless,female,substance,racegrp,treat))
+#Cluster analysis
+require(ClustOfVar)
+tree <- hclustvar(PCA.data)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/Clustertree.pdf")
+plot(tree)
+dev.off()
+#pdf("/Users/mlu/Courses/CPH576C/IndividualProject/StabilityCluster.pdf")
+#stability(tree,B=40)
+#part1 <- cutreevar(tree,4)
+#print(part1)
+#dev.off()
+#summary(part1)
+#stability(tree,B=40)
+#part2 <- cutreevar(tree,3)
+#print(part2)
+#summary(part2)
+#######################################################################
+
+
+#######################################################################
+#############################PCA and PCA regression#####################
+######################################################################
+PCA.data1 <- PCA.data[,c("daysdrink","daysanysub","anysubstatus","drinkstatus")]
+Group <- long.data1[,c("treat")]
+require(graphics)
+PCA1 <- prcomp(PCA.data1);summary(PCA1);print(PCA1)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/PCAtree1.pdf")
+plot(PCA1,type="l")
+dev.off()
+require(devtools)
+#install_github("ggbiplot", "vqv")
+require(ggbiplot)
+attach(PCA.data1)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/PCA1.pdf")
+g1 <- ggbiplot(PCA1,obs.scale=1,var.scale=1,groups=Group,ellipse=T,circle=T)
+g1 <- g1 + scale_color_discrete(name = '')
+g1 <- g1 + theme(legend.direction = 'horizontal', legend.position = 'top')
+print(g1)
+dev.off()
+require(caret)
+trans1 <- preProcess(PCA.data1, 
+                   method=c("BoxCox", "center", 
+                            "scale", "pca"))
+PC1 <- predict(trans1, PCA.data1);prediction1<- data.frame(PC1[,1:2]);names(prediction1) <- c("PC1a","PC1b")
+#########################################
+#########################################
+PCA.data2 <- PCA.data[,c("a15a","dayslink","linkstatus","satreat","time","cesdtv","mcstv","g1btv","indtottv","drugrisktv","sexrisktv")]
+PCA2 <- prcomp(PCA.data2);summary(PCA2);print(PCA2)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/PCAtree2.pdf")
+plot(PCA2,type="l")
+dev.off()
+attach(PCA.data2)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/PCA2.pdf")
+g2 <- ggbiplot(PCA2,obs.scale=1,var.scale=1,groups=Group,ellipse=T,circle=T)
+g2 <- g2 + scale_color_discrete(name = '')
+g2 <- g2 + theme(legend.direction = 'horizontal', legend.position = 'top')
+print(g2)
+dev.off()
+trans2 <- preProcess(PCA.data2, 
+                   method=c("BoxCox", "center", 
+                            "scale", "pca"))
+PC2 <- predict(trans2, PCA.data2);prediction2<- data.frame(PC2[,1:2]);names(prediction2) <- c("PC2a","PC2b")
+#######################################
+#########################################
+PCA.data3 <- PCA.data[,c("a15b","d1","f1a","f1b","f1c","f1d","f1e","f1f","f1g","f1h","f1i","f1j","f1k","f1l","f1m","f1n","f1o","f1p","f1q","f1r","f1s","f1t","i2","pss_fr","i1tv","pcstv")]
+PCA3 <- prcomp(PCA.data3);summary(PCA3);print(PCA3)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/PCAtree3.pdf")
+plot(PCA3,type="l")
+dev.off()
+#install_github("ggbiplot", "vqv")
+attach(PCA.data3)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/PCA3.pdf")
+g3 <- ggbiplot(PCA3,obs.scale=1,var.scale=1,groups=Group,ellipse=T,circle=T)
+g3 <- g3 + scale_color_discrete(name = '')
+g3 <- g3 + theme(legend.direction = 'horizontal', legend.position = 'top')
+print(g3)
+dev.off()
+trans3 <- preProcess(PCA.data3, 
+                   method=c("BoxCox", "center", 
+                            "scale", "pca"))
+PC3 <- predict(trans3, PCA.data3);prediction3<- data.frame(PC3[,c(1:3)]);names(prediction3) <- c("PC3a","PC3b","PC3c")
+data1 <- cbind(prediction1,prediction2,prediction3);data2 <- long.data1[,c("age","e2btv","id","homeless","substance","racegrp","female","treat")]
+data3 <- cbind(data1,data2)
+require(glmmADMB)
+id1 <- as.factor(data3$id);sssss <- data.frame(id1,data3)
+glmres1 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless*treat+female+substance+racegrp+(1|id1),data=data3,family="poisson")
+summary(glmres1)
+coef.beta.1 <- coef(glmres1)
+
+glmres3 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless+female+substance*treat+racegrp+(1|id1),data=data3,family="poisson")
+summary(glmres3)
+coef.beta.3 <- coef(glmres3)
+est.table3 <- xtable(glmres3,caption="Poisson regression",label="reg3",digits=c(0,0,4,4,4,4))
+
+glmres5 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age*female+homeless+homeless:treat+substance*treat+racegrp+(1|id1),data=data3,family="poisson")
+summary(glmres5)
+coef.beta.5 <- coef(glmres5)
+
+glmres7 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+female+substance*homeless*treat+racegrp+(1|id1),data=data3,family="poisson")
+summary(glmres7)
+coef.beta.7 <- coef(glmres7)
+est.table7 <- xtable(glmres7,caption="Poisson regression",label="reg3",digits=c(0,0,4,4,4,4))
+
+#Negative Binomial Regression
+glmres2 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless*treat+female+substance+racegrp+(1|id1),zeroInflation=T,data=sssss,family="nbinom")
+summary(glmres2)
+coef.beta.2 <- coef(glmres2)
+##Std.error=0.14458
+
+
+glmres4 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless+substance*treat+female+racegrp+(1|id1),zeroInflation=T,data=sssss,family="nbinom")
+summary(glmres4)
+coef.beta.4 <- coef(glmres4)
+##Std.error=0.14462
+est.table4 <- xtable(glmres4,caption="Negative Binomial regression",label="reg3",digits=c(0,0,4,4,4,4))
+
+glmres6 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age*female+homeless+homeless:treat+substance*treat+racegrp+(1|id1),zeroInflation=T,data=sssss,family="nbinom")
+summary(glmres6)
+coef.beta.6 <- coef(glmres6)
+##std.error=0.14462
+
+
+glmres8 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age*female+homeless*substance*treat+racegrp+(1|id1),zeroInflation=T,data=sssss,family="nbinom")
+summary(glmres8)
+coef.beta.8 <- coef(glmres8)
+est.table8 <- xtable(glmres8,caption="Negative Binomial regression",label="reg3",digits=c(0,0,4,4,4,4))
+@ 
+
+\section{1. INTRODUCTION}
+The HELP study was a clinical trial for adult inpatients recruited from a detoxification unit. Patients with no primary care physician were randomized to receive a multidisciplinary assessment and a brief motivational intervention or usual care, with the goal of linking them to primary medical care. Funding for the HELP study was provided by the National Institute on Alcohol Abuse and Alcoholism and National Institute on Drug Abuse.\\
+Eligible subjects were adults, who spoke Spanish or English, reported alcohol, heroin or cocaine as their first or second drug of choice, resided in proximity to the primary care clinic to which they would be referred or were homeless. Patients with established primary care relationships they planned to continue, significant dementia, specific plans to leave the Boston area that would prevent research participation, failure to provide contact information for tracking purposes, or pregnancy were excluded.\\
+Subjects were interviewed at baseline during their detoxification stay and follow-up interviews were undertaken every 6 months for 2 years. A variety of continuous, count, discrete, and survival tie predictors and outcomes were collected at each of these five occasions.\\
+
+
+\section{2. STUDY OBJECTIVES}
+\subsection{Primary Objective}
+
+Whether interaction between homeless and treat or substance and treat affect the number of times in past 6 months entered a detox program.\\
+
+                
+            
+\section{3. STUDY VARIABLES AND COVARIATES}
+\subsection{3.1 Primary outcome}
+The primary outcome is the number of times in past 6 months entered a detox program(e2b). \\
+\subsection{3.2 Study predicted variables}
+Number of nights in overnight shelter on past 6 months\\
+Number of nights on the street in past 6 months\\
+Age at baseline(in years)\\
+Center for Epidemiologic Studies Depression scale\\
+How many times hospitalized for medical problems\\
+Time to first alcoholic drink post or use any substance post-detox\\
+Gender of respondent\\
+Experienced serious thoughts of suicide\\
+1 or more nights on the street or shelter in past 6 months\\
+Average number of drinks consumed per day\\
+Random subject identifier\\
+SF-36 Mental Composite Score\\
+Index of Drug Abuse Consequences total score\\
+Number of primary care visits in past 6 months\\
+Any BSAS substance abuse treatment at baseline\\
+Risk-Assessment battery drug risk score\\
+Primary substance of abuse\\
+Randomization group\\
+      
+ 
+
+\section{4. STATISTICAL METHODS}
+\subsection{4.1 General Principles}
+     In HELP data, our response variable has count value, poisson models are often presented as the natural approach for count data. But I will use generalized mixed effect poisson regression and generalized mixed effect negative binomial regression to fit the data, then compare poisson regression model with negative binomial regression model. If the response variable not poisson distribution, the negative binomial regression model is much more flexible and is therefore likely to fit better. \\
+\subsection{4.2 Primary Analysis}
+Pearson Chi-squared Test:\\
+
+         Using Pearson Chi-square test to determine whether the homeless and treat or substance and treat are independent. If homeless and treat are independent, our model will not include the interaction of homeless and treat, if substance and treat are independent, our final model will not include the interaction of substance and treat. Using Cochran–Mantel–Haenszel test to test for the given randomization group, whether homeless and substance are independent. If homeless and substance are not independent, I will add the interaction of treat, homeless and substance in our model.\\
+
+Handling of Missing values\\
+
+Determining the type of missing values, if the missing values are MCAR or MAR, then, I will use multiple imputation method to impute missing values. If missing values are not randomized, I will use the sampling method, that the missing values could become randomized and then use multiple imputation method to calculate the missing values.\\
+
+Cluster Analysis and Principle Component Analysis:\\
+
+Since our data have a lot of variables, some of them are high correlated and some of them exist colinearity. I want to use cluster analysis to divide these variables to different groups, and in each of groups use principle component analysis to find the principle components, and use principle components to replace these variables.\\
+ 
+Sensitivity analysis:\\
+When we use regression method to analyze the data, there may exist outliers or influence points, I will figure out these outliers and influence points and use the same method to fit the data again. \\
+Since the data exists a lot of missing values, I will use the sampling method to select 500 or 1000samples, namely, the 500 or 1000 different data frames from the previous sample and redo the regression, comparing the mean of the coefficients model of these two different regressions.\\
+
+
+\section{REFERENCES}
+\label{sec:References}
+[1] Alan Agresti. Categorical Data Analysis. Jone wiley and Sons, 2002.
+[2] R.D. Cook. Residuals and Influence in Regression. Chapman and Hall, 1982
+[3] G. M. Fitzmaurice, N. M. Laird, and J. H. Ware. Applied Longitudinal Analysis. Wiley, 2004
+[4] N. J. Horton, E. Kim, and R. Saitz. A cautionary note regarding count models of alcohol consumption in randomized controlled trials. BMC Medical Research Methodology, 7(9), 2007
+[5] N. J. Horton and S. R. Lipsitz. Multiple imputation in practice: comparison of software packages for regression models with missing variables. The American Statistician, 55(3):244-254,2001
+[6] K-Y Liang and S L Zeger. Longitudinal data analysis using generalizing linear models. Biometrika, 73:13-22,1986
+[7] J. Pinheiro, D. Bates, S. DebRoy, D. Sarkar, and the R core team. Nlme: linear and nonlinear Mixed Effects Models, 2008. R package version 3.1-90 
+
+     
+\section{LIST OF TABLES AND FIGURES}
+\label{sec:List of Table and Figures}
+\begin{table}[H]
+  \begin{center}
+\begin{tabular}{ccccc}
+\hline
+\multirow{2}{*}{Homeless} & \multicolumn{2}{c}{Treat Group} & \multicolumn{2}{c}{\multirow{2}{*}{Pearson Chi-squared Test}} \\ \cline{2-3}
+                          & Usual Care     & HELP clinic    & \multicolumn{2}{c}{}                                          \\ \hline
+No                        & 119            & 125            & Chi-squared                      & 0.3888                     \\ \hline
+Yes                       & 109            & 100            & P-value                          & 0.5329                     \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+
+\begin{table}[H]
+  \begin{center}
+\begin{tabular}{ccccc}
+\hline
+\multirow{2}{*}{Substance} & \multicolumn{2}{*}{Treat Group} & \multicolumn{2}{c}{\multirow{2}{*}{Pearson Chi-squared Test}} \\ \cline{2-3}
+                           & Usual Care     & HELP clinic    & \multicolumn{2}{c}{}                                          \\ \hline
+Alcohol                    & 102            & 75             & Chi-squared                      & 0.3888                     \\ \hline
+Cocaine                    & 68             & 84             & P-value                          & 0.5329                     \\ \hline
+Heroin                     & 58             & 66             &                                  &                            \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+
+\begin{table}[H]
+  \begin{center}
+\begin{tabular}{cccccc}
+\hline
+\multirow{2}{*}{Substance} & \multirow{2}{*}{Substance} & \multicolumn{2}{c}{Treat Group} & \multicolumn{2}{c}{\multirow{2}{*}{Pearson Chi-squared Test}} \\ \cline{3-4}
+                           &                            & Usual Care     & HELP clinic    & \multicolumn{2}{c}{}                                          \\ \hline
+\multirow{3}{*}{No}        & Alcohol                    & 40             & 34             & \multirow{2}{*}{M-squared}    & \multirow{2}{*}{16.496}       \\ \cline{2-4}
+                           & Cocaine                    & 40             & 53             &                               &                               \\ \cline{2-6} 
+                           & Heroin                     & 39             & 38             & \multirow{2}{*}{P-value}      & \multirow{2}{*}{0.0002618}    \\ \cline{1-4}
+\multirow{3}{*}{Yes}       & Alcohol                    & 62             & 41             &                               &                               \\ \cline{2-6} 
+                           & Cocaine                    & 28             & 31             &                               &                               \\ \cline{2-6} 
+                           & Heroin                     & 19             & 28             &                               &                               \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+<<label=tableprint,results=tex,echo=F,eval=T,table.placement="H">>=
+print(est.table3)
+@ 
+<<label=tableprint,results=tex,echo=F,eval=T,table.placement="H">>=
+print(est.table4)
+@ 
+<<label=tableprint,results=tex,echo=F,eval=T,table.placement="H">>=
+print(est.table7)
+@ 
+<<label=tableprint,results=tex,echo=F,eval=T,table.placement="H">>=
+print(est.table8)
+@ 
+
+     \begin{figure}[H]
+     \begin{center}
+     \includegraphics[height=3in,width=3in]{/Users/mlu/Courses/CPH576C/IndividualProject/Clustertree.pdf}
+     \caption{Cluster Tree Plot }
+     \end{center}
+     \end{figure}
+     
+      \begin{figure}[H]
+     \begin{center}
+     \includegraphics[height=3in,width=3in]{/Users/mlu/Courses/CPH576C/IndividualProject/PCAtree1.pdff}
+     \caption{The first PCA Plot }
+     \end{center}
+     \end{figure}
+     
+      \begin{figure}[H]
+     \begin{center}
+     \includegraphics[height=3in,width=3in]{/Users/mlu/Courses/CPH576C/IndividualProject/PCAtree2.pdff}
+     \caption{The second PCA Plot }
+     \end{center}
+     \end{figure}
+     
+      \begin{figure}[H]
+     \begin{center}
+     \includegraphics[height=3in,width=3in]{/Users/mlu/Courses/CPH576C/IndividualProject/PCAtree3.pdff}
+     \caption{The third PCA Plot }
+     \end{center}
+     \end{figure}
+
+        
+\section{APPENDICES}
+\label{sec:Appendices}
+          
+
+             
+The following is R codes:\\
+<<label=PR7, echo=T,eval=F>>=
+#Input help data frame
+mydata <- read.table("/Users/mlu/Courses/CPH576C/Data/help_data.csv",header=T,sep=",")
+head(mydata)
+
+attach(mydata)
+mydata$facage[age>=19 & age<=30]<-"young"
+mydata$facage[age>30 & age<=40]<-"middleage"
+mydata$facage[age>40 & age<=60]<-"old"
+detach(mydata)
+#############################################################
+##########################Summary statistics####################
+#############################################################
+#Five number summary and the missing values
+require(fields);stats(mydata)
+
+#Contingencey Table
+#Case-control study
+#Sensitivity and specificity
+xtres1 <- xtabs(~homeless+treat+facage,data=mydata)
+xtres2 <- xtabs(~substance+treat+facage,data=mydata)
+xtres3 <- xtabs(~homeless+substance+treat,data=mydata)
+
+
+#The Writing Wald.ci() function to calculate odds ratio, difference of proportions and relative risk
+Wald.ci <- function(Table,aff.response,alpha=0.05)
+    {
+        #Given two-sided Wald CI's for odds ratio, difference in proportions and relative risk.
+        #Table is a 2 by 2 table of counts with rows giving the treatment populations
+        #aff.response is a string like "c(1,1)"
+        #giving the cell of the beneficial response and the treatment category
+        #alpha is significance level
+        pow <- function(x,a=-1) x^a;z.alpha <- qnorm(1-alpha/2)
+        if(is.character(aff.response))
+            where <- eval(parse(text=aff.response))
+        else where <- aff.response
+        Next <- as.numeric(where==1)+1
+        
+        #OR
+        odds.ratio <- Table[where[1],where[2]]*Table[Next[1],Next[2]]/
+            (Table[where[1],Next[2]]*Table[Next[1],where[2]])
+        se.OR <- sqrt(sum(pow(Table)));ci.OR <- exp(log(odds.ratio)+c(-1,1)*z.alpha*se.OR)
+        
+        #Difference of proportions
+        p1 <-Table[where[1],where[2]]/(n1<-Table[where[1],Next[2]] + Table[where[1],where[2]])
+        p2<-Table[Next[1],where[2]]/(n2<-Table[Next[1],where[2]]+Table[Next[1],Next[2]])
+        se.diff <- sqrt(pi*(1-p1)/n1+p2*(1-p2)/n2)
+        ci.diff <- (p1-p2)+c(-1,1)*z.alpha*se.diff
+        
+        #Relative Risk
+        RR <- p1/p2;se.RR <- sqrt((1-p1)/(p1*n1)+(1-p2)/(p2*n2))
+        ci.RR <- exp(log(RR)+c(-1,1)*z.alpha*se.RR)
+        
+        list(OR=list(odds.ratio=odds.ratio, CI=ci.OR), 
+             proportion.difference=list(diff=p1-p2,CI=ci.diff), 
+             relative.risk=list(relative.risk=RR,CI=ci.RR))
+    }
+Wald.ci.test1 <- Wald.ci(xtres1[,,1],"c(1,1)")
+Wald.ci.test2 <- Wald.ci(xtres1[,,2],"c(1,1)")
+Wald.ci.test3 <- Wald.ci(xtres1[,,3],"c(1,1)")
+Wald.ci.test4 <- Wald.ci(xtres2[,,1],"c(1,1)")
+Wald.ci.test5 <- Wald.ci(xtres2[,,2],"c(1,1)")
+Wald.ci.test6 <- Wald.ci(xtres2[,,3],"c(1,1)")
+Wald.ci.test7 <- Wald.ci(xtres3[,,1],"c(1,1)")
+Wald.ci.test8 <- Wald.ci(xtres3[,,2],"c(1,1)")
+
+
+
+#Cochran–Mantel–Haenszel chi-square test
+mantelhaen3 <- mantelhaen.test(xtres3)
+
+
+#Measures of association
+require(vcd)
+asso1 <- assocstats(xtres1[,,1])
+asso2 <- assocstats(xtres1[,,2])
+asso3 <- assocstats(xtres1[,,3])
+asso4 <- assocstats(xtres2[,,1])
+asso5 <- assocstats(xtres2[,,2])
+asso6 <- assocstats(xtres2[,,3])
+asso7 <- assocstats(xtres3[,,1])
+asso8 <- assocstats(xtres3[,,2])
+xtabxtres1 <- chisq.test(xtres1[,,1])
+xtabxtres2 <- chisq.test(xtres1[,,2])
+xtabxtres3 <- chisq.test(xtres1[,,3])
+xtabxtres4 <- chisq.test(xtres2[,,1])
+xtabxtres5 <- chisq.test(xtres2[,,2])
+xtabxtres6 <- chisq.test(xtres2[,,3])
+xtabxtres7 <- chisq.test(xtres3[,,1])
+xtabxtres8 <- chisq.test(xtres3[,,2])
+#Converting the numeric variables to factor variables
+help.data <- mydata[,c("id","e2b","e2b1","e2b2","e2b3","e2b4","i1","i11","i12","i13","i14","mcs","mcs1","mcs2","mcs3","mcs4","sexrisk","sexrisk1","sexrisk2","sexrisk3","sexrisk4","d1","age","substance","racegrp","cesd","cesd1","cesd2","cesd3","cesd4")]
+help.data <- subset(mydata,select=-c(anysubstatus,drinkstatus,female,g1b,g1b1,g1b2,g1b3,g1b4,homeless,linkstatus,satreat,treat,drinkstatus))
+attach(mydata)
+anysubstatus<- as.factor(anysubstatus)
+drinkstatus <- as.factor(drinkstatus)
+female <- as.factor(female)
+g1b <- as.factor(g1b)
+g1b1 <- as.factor(g1b1)
+g1b2 <- as.factor(g1b2)
+g1b3 <- as.factor(g1b3)
+g1b4 <- as.factor(g1b4)
+homeless <- as.factor(homeless)
+linkstatus <- as.factor(linkstatus)
+satreat <- as.factor(satreat)
+treat <- as.factor(treat)
+detach(mydata)
+help.data <- cbind(help.data,anysubstatus,drinkstatus,female,g1b,g1b1,g1b2,g1b3,g1b4,homeless,linkstatus,satreat,treat)
+
+
+
+#Display patterns of missing variables in a given data frame
+require(mice);newdata <- help.data[1:386,]
+missing.pattern <- md.pattern(help.data)
+
+
+
+#Dealing with missing data by using multiple imputation method
+#Because the multiple imputation method is randomized, I set the seed to conform the same results
+require(mice)
+imp1 <-mice(newdata,m=5,maxit=10,seed=23109,
+           method=c(rep("pmm",74),rep("polyreg",2),rep("logreg",12)))
+summary(imp1)
+print(imp1)
+#Geting the complete data frame, there is no missing data any more.
+complete.data1 <- complete(imp1)
+
+
+
+#I need to use Principle component analysis, so I convert factor variables to numeric variables
+help.data <- subset(complete.data1,select=-c(anysubstatus,g1b,g1b1,g1b2,g1b3,g1b4,linkstatus,satreat,drinkstatus))
+anysubstatus<- as.numeric(complete.data1$anysubstatus)
+drinkstatus <- as.numeric(complete.data1$drinkstatus)
+g1b <- as.numeric(complete.data1$g1b)
+g1b1 <- as.numeric(complete.data1$g1b1)
+g1b2 <- as.numeric(complete.data1$g1b2)
+g1b3 <- as.numeric(complete.data1$g1b3)
+g1b4 <- as.numeric(complete.data1$g1b4)
+linkstatus <- as.numeric(complete.data1$linkstatus)
+satreat <- as.numeric(complete.data1$satreat)
+subset.data1 <- data.frame(anysubstatus,drinkstatus,g1b,g1b1,g1b2,g1b3,g1b4,linkstatus,satreat)
+subset.data2 <- cbind(help.data,subset.data1)
+
+
+
+#Inspecting the distributions of original and the imputed data
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/stripplot")
+stripplot(imp1,pch=20,cex=1.2)
+dev.off()
+
+
+#Converting from wide form to long form
+long.data1 <- reshape(subset.data2 ,idvar=c("id","treat"),varying=list(c("cesd","cesd1","cesd2","cesd3","cesd4"),c("mcs","mcs1","mcs2","mcs3","mcs4"),c("i1","i11","i12","i13","i14"),c("g1b","g1b1","g1b2","g1b3","g1b4"),c("e2b","e2b1","e2b2","e2b3","e2b4"),c("pcs","pcs1","pcs2","pcs3","pcs4"),c("indtot","indtot1","indtot2","indtot3","indtot4"),c("drugrisk","drugrisk1","drugrisk2","drugrisk3","drugrisk4"),c("sexrisk","sexrisk1","sexrisk2","sexrisk3","sexrisk4")),v.names=c("cesdtv","mcstv","i1tv","g1btv","e2btv","pcstv","indtottv","drugrisktv","sexrisktv"),timevar="time",times=0:4,direction="long")
+
+
+
+#################################################################
+###########################Cluster analysis#########################
+#################################################################
+PCA.data <- subset(long.data1,select=-c(age,pcrec1,pcrec2,pcrec3,pcrec4,e2btv,id,homeless,female,substance,racegrp,treat))
+#Ordianry cluster analysis
+hclust1 <- hclust(dist(cluster.data),method="ward.D")
+plot(hclust1)
+hclust2 <- hclust(dist(cluster.data),method="ward.D2")
+plot(hclust2)
+hclust3 <- hclust(dist(cluster.data),method="single")
+plot(hclust3)
+hclust4 <- hclust(dist(cluster.data),method="complete")
+plot(hclust4)
+hclust5 <- hclust(dist(cluster.data),method="average")
+plot(hclust5)
+hclust6 <- hclust(dist(cluster.data),method="median")
+plot(hclust6)
+hclust7 <- hclust(dist(cluster.data),method="centroid")
+plot(hclust7)
+
+
+#Other method to do the cluster analysis
+require(ClustOfVar)
+tree <- hclustvar(PCA.data)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/Clustertree.pdf")
+plot(tree)
+dev.off()
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/StabilityCluster.pdf")
+stability(tree,B=40)
+part1 <- cutreevar(tree,4)
+print(part1)
+dev.off()
+summary(part1)
+stability(tree,B=40)
+part2 <- cutreevar(tree,3)
+print(part2)
+summary(part2)
+##############################################################################
+
+
+############################################################################
+#############################PCA and PCA regression##########################
+############################################################################
+PCA.data1 <- PCA.data[,c("daysdrink","daysanysub","anysubstatus","drinkstatus")]
+Group <- long.data1[,c("treat")]
+require(graphics)
+PCA1 <- prcomp(PCA.data1)
+summary(PCA1)
+print(PCA1)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/PCAtree1.pdf")
+plot(PCA1,type="l")
+dev.off()
+require(devtools)
+#install_github("ggbiplot", "vqv")
+require(ggbiplot)
+attach(PCA.data1)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/PCA1.pdf")
+g1 <- ggbiplot(PCA1,obs.scale=1,var.scale=1,groups=Group,ellipse=T,circle=T)
+g1 <- g1 + scale_color_discrete(name = '')
+g1 <- g1 + theme(legend.direction = 'horizontal', legend.position = 'top')
+print(g1)
+dev.off()
+require(caret)
+trans1 <- preProcess(PCA.data1, 
+                   method=c("BoxCox", "center", 
+                            "scale", "pca"))
+PC1 <- predict(trans1, PCA.data1)
+prediction1<- data.frame(PC1[,1:2])
+names(prediction1) <- c("PC1a","PC1b")
+#########################################
+
+
+
+
+#########################################
+PCA.data2 <- PCA.data[,c("a15a","dayslink","linkstatus","satreat","time","cesdtv","mcstv","g1btv","indtottv","drugrisktv","sexrisktv")]
+PCA2 <- prcomp(PCA.data2)
+summary(PCA2)
+print(PCA2)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/PCAtree2.pdf")
+plot(PCA2,type="l")
+dev.off()
+attach(PCA.data2)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/PCA2.pdf")
+g2 <- ggbiplot(PCA2,obs.scale=1,var.scale=1,groups=Group,ellipse=T,circle=T)
+g2 <- g2 + scale_color_discrete(name = '')
+g2 <- g2 + theme(legend.direction = 'horizontal', legend.position = 'top')
+print(g2)
+dev.off()
+trans2 <- preProcess(PCA.data2, 
+                   method=c("BoxCox", "center", 
+                            "scale", "pca"))
+PC2 <- predict(trans2, PCA.data2)
+prediction2<- data.frame(PC2[,1:2])
+names(prediction2) <- c("PC2a","PC2b")
+
+
+
+
+
+
+
+
+#########################################
+PCA.data3 <- PCA.data[,c("a15b","d1","f1a","f1b","f1c","f1d","f1e","f1f","f1g","f1h","f1i","f1j","f1k","f1l","f1m","f1n","f1o","f1p","f1q","f1r","f1s","f1t","i2","pss_fr","i1tv","pcstv")]
+PCA3 <- prcomp(PCA.data3)
+summary(PCA3)
+print(PCA3)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/PCAtree3.pdf")
+plot(PCA3,type="l")
+dev.off()
+#install_github("ggbiplot", "vqv")
+attach(PCA.data3)
+pdf("/Users/mlu/Courses/CPH576C/IndividualProject/PCA3.pdf")
+g3 <- ggbiplot(PCA3,obs.scale=1,var.scale=1,groups=Group,ellipse=T,circle=T)
+g3 <- g3 + scale_color_discrete(name = '')
+g3 <- g3 + theme(legend.direction = 'horizontal', legend.position = 'top')
+print(g3)
+dev.off()
+trans3 <- preProcess(PCA.data3, 
+                   method=c("BoxCox", "center", 
+                            "scale", "pca"))
+PC3 <- predict(trans3, PCA.data3)
+prediction3<- data.frame(PC3[,c(1:3)])
+names(prediction3) <- c("PC3a","PC3b","PC3c")
+data1 <- cbind(prediction1,prediction2,prediction3)
+data2 <- long.data1[,c("age","e2btv","id","homeless","substance","racegrp","female","treat")]
+data3 <- cbind(data1,data2)
+
+
+
+#Generalized mixed effect model
+#Poisson Regression
+require(glmmADMB)
+id1 <- as.factor(data3$id)
+sssss <- data.frame(id1,data3)
+glmres1 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless*treat+female+substance+racegrp+(1|id1),data=data3,family="poisson")
+summary(glmres1)
+
+glmres3 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless+female+substance*treat+racegrp+(1|id1),data=data3,family="poisson")
+summary(glmres3)
+glmres5 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age*female+homeless+homeless:treat+substance*treat+racegrp+(1|id1),data=data3,family="poisson")
+summary(glmres5)
+
+
+glmres7 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+female+substance*homeless*treat+racegrp+(1|id1),data=data3,family="poisson")
+summary(glmres7)
+
+
+#Negative Binomial Regression
+glmres2 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless*treat+female+substance+racegrp+(1|id1),zeroInflation=T,data=sssss,family="nbinom")
+summary(glmres2)
+##Std.error=0.14458
+
+
+glmres4 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless+substance*treat+female+racegrp+(1|id1),zeroInflation=T,data=sssss,family="nbinom")
+summary(glmres4)
+##Std.error=0.14462
+
+
+glmres6 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age*female+homeless+homeless:treat+substance*treat+racegrp+(1|id1),zeroInflation=T,data=sssss,family="nbinom")
+summary(glmres6)
+##std.error=0.14462
+
+
+glmres8 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age*female+homeless*substance*treat+racegrp+(1|id1),zeroInflation=T,data=sssss,family="nbinom")
+summary(glmres8)
+#########################################################################
+###########################Sensitivity Analysis##############################
+#########################################################################
+
+stderrs <- function(model)
+    {
+        ifelse(min(diag(vcov(model)))>0,
+               sqrt(diag(vcov(model))),NA)
+    }
+ciout <- function(est,se,target)
+    {
+        ifelse((est-1.96*se>target) | (est+1.96*se<target),1,0)
+    }
+testpnb2 <- function(n,beta,data)
+    {
+        sample.df <- function(df, n) df[sample(nrow(df), n), , drop = FALSE]
+        #Creating some data
+        sample.data <- sample.df(sssss, 1930)
+
+        #require(kimisc)
+        #sample.rows(sssss,1930)
+        
+        # fit models to different family
+       glmres3 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless+female+substance*treat+racegrp+(1|id1),data=data3,family="poisson")
+        glmres4 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless+substance*treat+female+racegrp+(1|id1),zeroInflation=T,data=sssss,family="nbinom")
+summary(glmres4)
+        
+         # extract parameter estimates using the coef() function
+         est = as.numeric(c(coef(glmres1)[2], coef(glmres2)[2]))
+         # use our two new functions to get the SE and the CI indicator
+         se = c(stderrs(glmres1), stderrs(glmres2))
+         ci = ciout(est, se, rep(beta,2))
+         return(matrix(c(est,se,ci),ncol=3))
+    }
+
+testpnb1 <- function(n,beta,data)
+    {
+        sample.df <- function(df, n) df[sample(nrow(df), n), , drop = FALSE]
+        #Creating some data
+        sample.data <- sample.df(sssss, 1930)
+
+        #require(kimisc)
+        #sample.rows(sssss,1930)
+        
+        # fit models to different family
+       glmres1 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless*treat+female+substance+racegrp+(1|id1),data=sample.data,family="poisson")
+        glmres2 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless*treat+female+substance+racegrp+(1|id1),zeroInflation=T,data=sample.data,family="nbinom")
+        
+         # extract parameter estimates using the coef() function
+         est = as.numeric(c(coef(glmres1)[2], coef(glmres2)[2]))
+         # use our two new functions to get the SE and the CI indicator
+         se = c(stderrs(glmres1), stderrs(glmres2))
+         ci = ciout(est, se, rep(beta,2))
+         return(matrix(c(est,se,ci),ncol=3))
+    }
+
+
+testpnb3 <- function(n,beta,data)
+    {
+        sample.df <- function(df, n) df[sample(nrow(df), n), , drop = FALSE]
+        #Creating some data
+        sample.data <- sample.df(sssss, 1930)
+
+        #require(kimisc)
+        #sample.rows(sssss,1930)
+        
+        # fit models to different family
+       glmres5 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age*female+homeless+homeless:treat+substance*treat+racegrp+(1|id1),data=data3,family="poisson")
+        glmres6 <- glmmadmb(e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age*female+homeless+homeless:treat+substance*treat+racegrp+(1|id1),zeroInflation=T,data=sssss,family="nbinom")
+        
+         # extract parameter estimates using the coef() function
+         est = as.numeric(c(coef(glmres1)[2], coef(glmres2)[2]))
+         # use our two new functions to get the SE and the CI indicator
+         se = c(stderrs(glmres1), stderrs(glmres2))
+         ci = ciout(est, se, rep(beta,2))
+         return(matrix(c(est,se,ci),ncol=3))
+    }
+
+
+
+
+rsq1 <- function(formula,data,indices)
+    {
+        d <- data[indices,]
+        glmres <- glmmadmb(formula,data=d,family="poisson")
+        return(summary(glmres))
+    }
+rsq2 <- function(formula,data,indices)
+    {
+        d <- data[indices,]
+        glmres <- glmmadmb(formula,data=d,family="nbinom")
+        return(summary(glmres))
+    }
+
+require(boot)
+results1.1 <- boot(data=sssss,,statistic=rsq1,R=1000,formula=e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless*treat+female+substance+racegrp+(1|id1))
+results1.2 <- boot(data=sssss,,statistic=rsq2,R=1000,formula=e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless*treat+female+substance+racegrp+(1|id1))
+
+
+results2.1 <- boot(data=sssss,,statistic=rsq1,R=1000,formula=e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless+female+substance*treat+racegrp+(1|id1))
+results2.2 <- boot(data=sssss,,statistic=rsq2,R=1000,formula=e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age+homeless+female+substance*treat+racegrp+(1|id1))
+
+
+results3.1 <- boot(data=sssss,,statistic=rsq1,R=1000,formula=e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age*female+homeless+homeless:treat+substance*treat+racegrp+(1|id1))
+results3.2 <- boot(data=sssss,,statistic=rsq2,R=1000,formula=e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age*female+homeless+homeless:treat+substance*treat+racegrp+(1|id1))
+
+
+results4.1 <- boot(data=sssss,,statistic=rsq1,R=1000,formula=e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age*female+homeless*substance*treat+racegrp+(1|id1))
+results4.2 <- boot(data=sssss,,statistic=rsq2,R=1000,formula=e2btv~PC1a+PC1b+PC2a+PC2b+PC3a+PC3b+PC3c+age*female+homeless*substance*treat+racegrp+(1|id1))
+@ 
+ \end{document}
+
+ 
